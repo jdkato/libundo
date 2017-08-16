@@ -3,8 +3,9 @@
 
 #include "diff_match_patch.h"
 
-#include <cstdio>
-#include <memory>
+#include <fstream>
+#include <iostream>
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -14,11 +15,17 @@
 #define NODE_END ')'
 
 /**
+ * { item_description }
+ */
+#define NODE_START '('
+
+/**
  * @brief      { struct_description }
  */
 struct Node {
+  std::string f_patch;
+  std::string b_patch;
   int index;
-  std::string patch;
   Node* parent;
   std::vector<Node*> children;
 };
@@ -31,19 +38,45 @@ class UndoTree {
    * @param[in]  hash  The hash
    * @param[in]  dir   The dir
    */
-  UndoTree(const char* path) {
-    FILE* fp = std::fopen(path, "r");
-    if (fp != NULL) {
-      // We found an undo file.
-      read(root, fp);
+  UndoTree(const std::string& path) : root(NULL), total(0) {
+    std::ifstream history(path);
+    if (history.is_open()) {
+      std::stack<Node*> stage;
+      std::string patch;
+      Node* parent = NULL;
+      char ch;
+      while (history >> std::noskipws >> ch) {
+        if (ch == NODE_START) {
+          patch = "";
+          Node* temp = new Node;
+          if (parent == NULL) {
+            root = temp;
+          } else {
+            parent->children.push_back(temp);
+          }
+          stage.push(temp);
+          parent = temp;
+        } else if (ch == NODE_END) {
+          stage.pop();
+          if (!stage.empty()) {
+            parent = stage.top();
+          }
+        } else {
+          patch += ch;
+        }
+      }
     }
-    fclose(fp);
+    history.close();
+    undo_file = path;
   }
 
   /**
    * @brief      Destroys the object.
    */
-  ~UndoTree(void) { remove_all(root); }
+  ~UndoTree(void) {
+    write(root);
+    clear(root);
+  }
 
   /**
    * @brief      { function_description }
@@ -52,81 +85,128 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  int insert(const std::string& buf) { return append(head, buf); }
+  int insert(const std::string& buf) {
+    Node* to_add = new Node;
+    to_add->index = ++total;
+    if (!root) {
+      root = to_add;
+      root->f_patch = dmp.patch_toText(dmp.patch_make("", buf));
+      root->b_patch = dmp.patch_toText(dmp.patch_make(buf, ""));
+      root->parent = NULL;
+    } else {
+      /**
+       *     1
+       *   / | \
+       *  2  3  4
+       *    / \  \
+       *   5   @  7
+       */
+      std::cout << "Adding " << buf << " with index " << to_add->index
+                << std::endl;
+      std::cout << "Looking for parent with index " << index << std::endl;
+      Node* parent = search(root, index);
+      std::cout << "Parent = " << parent->index << std::endl;
+      parent->children.push_back(to_add);
+
+      to_add->parent = parent;
+      to_add->f_patch = dmp.patch_toText(dmp.patch_make(cur_buf, buf));
+      to_add->f_patch = dmp.patch_toText(dmp.patch_make(buf, cur_buf));
+    }
+    index = to_add->index;
+    cur_buf = buf;
+    return 0;
+  }
 
   /**
    * @brief      { function_description }
    *
    * @return     { description_of_the_return_value }
    */
-  std::string undo() { return ""; }
+  std::string undo() {
+    if (index - 1 >= 1) {
+      index = index - 1;
+      std::string patch = search(root, index)->b_patch;
+      std::pair<std::string, std::vector<bool>> out =
+          dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
+      return out.first;
+    } else {
+      return cur_buf;
+    }
+  }
 
   /**
    * @brief      { function_description }
    *
    * @return     { description_of_the_return_value }
    */
-  std::string redo() { return ""; }
+  std::string redo() {
+    if (index + 1 <= total) {
+      index = index + 1;
+      std::string patch = search(root, index)->f_patch;
+      std::pair<std::string, std::vector<bool>> out =
+          dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
+      return out.first;
+    } else {
+      return cur_buf;
+    }
+  }
 
   /**
    * @brief      { function_description }
    *
    * @return     { description_of_the_return_value }
    */
-  int size() { return index; }
+  int size() { return total; }
+
+  std::vector<Node> nodes() { return collect(root); }
 
  private:
-  Node* head;
   Node* root;
 
+  int total;
   int index;
+
   std::string cur_buf;
+  std::string undo_file;
 
   diff_match_patch<std::string> dmp;
 
   /**
    * @brief      { function_description }
    *
-   * @param      root  The root
-   * @param[in]  buf   The buffer
+   * @return     { description_of_the_return_value }
    */
-  int append(Node*& root, const std::string& buf) {
-    if (!head) {
-      head = new Node;
-      head->patch = dmp.patch_toText(dmp.patch_make("", buf));
-      head->index = 0;
-      root = head;
-    } else {
-      Node* temp = new Node;
-      head->children.push_back(temp);
-
-      temp->index = head->index++;
-      temp->parent = head;
-      head = temp;
-
-      head->patch = dmp.patch_toText(dmp.patch_make(cur_buf, buf));
-      cur_buf = buf;
-
-      delete temp;
+  int write(Node* root) {
+    std::ofstream outfile;
+    outfile.open(undo_file);
+    if (root != NULL) {
+      outfile << "(" << root->index;
+      for (auto child : root->children) {
+        write(child);
+      }
+      outfile << ")";
     }
-
+    outfile.close();
     return 0;
   }
 
-  /**
-   * @brief      Removes all.
-   *
-   * @param      root  The root
-   *
-   * @return     { description_of_the_return_value }
-   */
-  int remove_all(Node*& root) {
-    if (!root) {
-      return 0;
-    };
+  std::vector<Node> collect(Node* root) {
+    std::vector<Node> collected;
+    if (root != NULL) {
+      collected.push_back(*root);
+      for (auto child : root->children) {
+        std::vector<Node> found = collect(child);
+        collected.insert(collected.end(), found.begin(), found.end());
+      }
+    }
+    return collected;
+  }
 
-    for (auto& branch : root->children) {
-      remove_all(branch);
+  int clear(Node*& root) {
+    if (!root) return 0;
+
+    for (auto child : root->children) {
+      clear(child);
     }
 
     delete root;
@@ -135,32 +215,15 @@ class UndoTree {
     return 1;
   }
 
-  /**
-   * @brief      { function_description }
-   *
-   * @param      root  The root
-   * @param      fp    { parameter_description }
-   */
-  int read(Node*& root, FILE* fp) {
-    if (!fscanf(fp, "%c ", &val) || val == NODE_END) {
-      return 1;
+  Node* search(Node* root, int to_find) {
+    if (!root || root->index == to_find) {
+      return root;
+    } else {
+      for (auto child : root->children) {
+        return search(child, to_find);
+      }
     }
-
-    // Else create node with this item and recur for children
-    root = newNode(val);
-    for (int i = 0; i < N; i++)
-      if (read(root->child[i], fp)) break;
-
-    // Finally return 0 for successful finish
-    return 0;
   }
-
-  /**
-   * @brief      { function_description }
-   *
-   * @return     { description_of_the_return_value }
-   */
-  int write(FILE* fp) { return 0; }
 };
 
 #ifdef __cplusplus
@@ -169,7 +232,7 @@ extern "C" {
 
 typedef struct UndoTree UndoTree;
 
-UndoTree* newUndoTree(const char* buf, const char* dir);
+UndoTree* newUndoTree(const char* path);
 void deleteUndoTree(UndoTree* t);
 int insert(UndoTree* t, const char* buf);
 

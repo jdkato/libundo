@@ -46,7 +46,7 @@ set(BASE_SOURCE_FILES
 
 set(BASE_TEST_SOURCES
     ${BASE_TEST_DIR}/TestBase.cc
-    ${BASE_TEST_DIR}/TestFileManagement.cc
+    ${BASE_TEST_DIR}/TestTree.cc
 )
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

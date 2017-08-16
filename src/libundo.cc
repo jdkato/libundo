@@ -8,8 +8,8 @@ extern "C" {
  *
  * @return     { description_of_the_return_value }
  */
-UndoTree* newUndoTree(const char* buf, const char* dir) {
-  return reinterpret_cast<UndoTree*>(new UndoTree(buf, dir));
+UndoTree* newUndoTree(const char* path) {
+  return reinterpret_cast<UndoTree*>(new UndoTree(path));
 }
 
 /**
