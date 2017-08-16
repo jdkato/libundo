@@ -39,7 +39,7 @@ class UndoTree {
    * @param[in]  hash  The hash
    * @param[in]  dir   The dir
    */
-  UndoTree(const std::string& path) : root(NULL), total(0), branch(0) {
+  UndoTree(const std::string& path) : root(NULL), total(0), branch(0), idx(0) {
     std::ifstream history(path);
     if (history.is_open()) {
       std::stack<Node*> stage;
@@ -89,17 +89,19 @@ class UndoTree {
   void insert(const std::string& buf) {
     Node* to_add = new Node;
     to_add->index = ++total;
+
     if (!root) {
       root = to_add;
       root->patches = patch("", buf);
       root->parent = NULL;
     } else {
-      Node* parent = find_parent();  // search(root, index);
+      Node* parent = find_parent();
       parent->children.push_back(to_add);
       to_add->parent = parent;
       to_add->patches = patch(cur_buf, buf);
     }
-    index = to_add->index;
+
+    idx = to_add->index;
     cur_buf = buf;
   }
 
@@ -109,11 +111,11 @@ class UndoTree {
    * @return     { description_of_the_return_value }
    */
   std::string undo() {
-    if (index - 1 >= 1) {
-      index = index - 1;
-      std::string patch = search(root, index)->patches.second;
+    if (idx - 1 >= 0) {
+      std::string patch = current()->patches.second;
       std::pair<std::string, std::vector<bool>> out =
           dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
+      idx = idx - 1;
       return out.first;
     } else {
       return cur_buf;
@@ -126,11 +128,11 @@ class UndoTree {
    * @return     { description_of_the_return_value }
    */
   std::string redo() {
-    if (index + 1 <= total) {
-      index = index + 1;
-      std::string patch = search(root, index)->patches.first;
+    if (idx + 1 <= total) {
+      std::string patch = current()->patches.first;
       std::pair<std::string, std::vector<bool>> out =
           dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
+      idx = idx + 1;
       return out.first;
     } else {
       return cur_buf;
@@ -156,14 +158,21 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
+  Node* current() { return search(root, idx); }
+
+  /**
+   * @brief      { function_description }
+   *
+   * @return     { description_of_the_return_value }
+   */
   std::vector<Node> nodes() { return collect(root); }
 
   /**
    * @brief      { function_description }
    */
   void switch_branch(void) {
-    Node* current = search(root, index);
-    if (branch + 1 < current->parent->children.size()) {
+    Node* pos = current();
+    if (branch + 1 < pos->parent->children.size()) {
       branch = branch + 1;
     } else {
       branch = 0;
@@ -174,7 +183,7 @@ class UndoTree {
   Node* root;
 
   int total;
-  int index;
+  int idx;
   int branch;
 
   std::string cur_buf;
@@ -267,7 +276,7 @@ class UndoTree {
    * @return     { description_of_the_return_value }
    */
   Node* find_parent() {
-    Node* maybe = search(root, index);
+    Node* maybe = current();
     if (maybe->parent && branch < maybe->parent->children.size()) {
       return maybe->parent->children[branch];
     } else {
@@ -288,8 +297,10 @@ class UndoTree {
     auto d2 = d1;
 
     for (auto& e : d2) {
-      if (e.operation != EQUAL) {
-        e.operation = static_cast<Operation>(-1 * e.operation);
+      if (e.operation == DELETE) {
+        e.operation = INSERT;
+      } else if (e.operation == INSERT) {
+        e.operation = DELETE;
       }
     }
 

@@ -1,7 +1,29 @@
+#include <catch.hpp>
 #include "libundo.h"
 
-#include <catch.hpp>
+SCENARIO("Buffer contents can be changed", "[core]") {
+  GIVEN("A buffer with contents 'A'") {
+    UndoTree* t = new UndoTree("foo.undo");
+    t->insert("A");
 
+    REQUIRE(t->size() == 1);
+    REQUIRE(t->current()->parent == NULL);
+
+    WHEN("I undo the addition") {
+      std::string buf = t->undo();
+
+      THEN("the buffer should be empty") { REQUIRE(buf == ""); }
+    }
+
+    WHEN("I redo the addition") {
+      std::string buf = t->redo();
+
+      THEN("the buffer should be 'A' again") { REQUIRE(buf == "A"); }
+    }
+  }
+}
+
+/*
 TEST_CASE("Basic UndoTree functionality", "[file.undo]") {
   UndoTree* t = new UndoTree("foo.undo");
 
@@ -26,4 +48,4 @@ TEST_CASE("Basic UndoTree functionality", "[file.undo]") {
                 << "." << std::endl;
     }
   }
-}
+}*/
