@@ -27,5 +27,5 @@ void deleteUndoTree(UndoTree* t) { delete t; }
  *
  * @return     { description_of_the_return_value }
  */
-int insert(UndoTree* t, const char* buf) { return t->insert(buf); }
+void insert(UndoTree* t, const char* buf) { t->insert(buf); }
 }

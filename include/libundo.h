@@ -7,6 +7,8 @@
 #include <iostream>
 #include <stack>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 /**
@@ -23,11 +25,10 @@
  * @brief      { struct_description }
  */
 struct Node {
-  std::string f_patch;
-  std::string b_patch;
   int index;
   Node* parent;
   std::vector<Node*> children;
+  std::pair<std::string, std::string> patches;
 };
 
 class UndoTree {
@@ -38,7 +39,7 @@ class UndoTree {
    * @param[in]  hash  The hash
    * @param[in]  dir   The dir
    */
-  UndoTree(const std::string& path) : root(NULL), total(0) {
+  UndoTree(const std::string& path) : root(NULL), total(0), branch(0) {
     std::ifstream history(path);
     if (history.is_open()) {
       std::stack<Node*> stage;
@@ -85,36 +86,22 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  int insert(const std::string& buf) {
+  void insert(const std::string& buf) {
     Node* to_add = new Node;
     to_add->index = ++total;
     if (!root) {
       root = to_add;
-      root->f_patch = dmp.patch_toText(dmp.patch_make("", buf));
-      root->b_patch = dmp.patch_toText(dmp.patch_make(buf, ""));
+      root->patches = patch("", buf);
       root->parent = NULL;
     } else {
-      /**
-       *     1
-       *   / | \
-       *  2  3  4
-       *    / \  \
-       *   5   @  7
-       */
-      std::cout << "Adding " << buf << " with index " << to_add->index
-                << std::endl;
-      std::cout << "Looking for parent with index " << index << std::endl;
       Node* parent = search(root, index);
-      std::cout << "Parent = " << parent->index << std::endl;
       parent->children.push_back(to_add);
-
       to_add->parent = parent;
-      to_add->f_patch = dmp.patch_toText(dmp.patch_make(cur_buf, buf));
-      to_add->f_patch = dmp.patch_toText(dmp.patch_make(buf, cur_buf));
+      to_add->patches = patch(cur_buf, buf);
     }
     index = to_add->index;
     cur_buf = buf;
-    return 0;
+    current = *to_add;
   }
 
   /**
@@ -125,7 +112,7 @@ class UndoTree {
   std::string undo() {
     if (index - 1 >= 1) {
       index = index - 1;
-      std::string patch = search(root, index)->b_patch;
+      std::string patch = search(root, index)->patches.second;
       std::pair<std::string, std::vector<bool>> out =
           dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
       return out.first;
@@ -142,7 +129,7 @@ class UndoTree {
   std::string redo() {
     if (index + 1 <= total) {
       index = index + 1;
-      std::string patch = search(root, index)->f_patch;
+      std::string patch = search(root, index)->patches.first;
       std::pair<std::string, std::vector<bool>> out =
           dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
       return out.first;
@@ -158,13 +145,38 @@ class UndoTree {
    */
   int size() { return total; }
 
+  /**
+   * @brief      { function_description }
+   *
+   * @return     { description_of_the_return_value }
+   */
+  int current_branch() { return branch; }
+
+  /**
+   * @brief      { function_description }
+   *
+   * @return     { description_of_the_return_value }
+   */
   std::vector<Node> nodes() { return collect(root); }
+
+  /**
+   * @brief      { function_description }
+   */
+  void switch_branch(void) {
+    if (branch + 1 < current.children.size()) {
+      branch = branch + 1;
+    } else {
+      branch = 0;
+    }
+  }
 
  private:
   Node* root;
+  Node current;
 
   int total;
   int index;
+  int branch;
 
   std::string cur_buf;
   std::string undo_file;
@@ -202,8 +214,17 @@ class UndoTree {
     return collected;
   }
 
+  /**
+   * @brief      { function_description }
+   *
+   * @param      root  The root
+   *
+   * @return     { description_of_the_return_value }
+   */
   int clear(Node*& root) {
-    if (!root) return 0;
+    if (!root) {
+      return 0;
+    };
 
     for (auto child : root->children) {
       clear(child);
@@ -215,14 +236,67 @@ class UndoTree {
     return 1;
   }
 
+  /**
+   * @brief      Searches for the first match.
+   *
+   * @param      root     The root
+   * @param[in]  to_find  To find
+   *
+   * @return     { description_of_the_return_value }
+   */
   Node* search(Node* root, int to_find) {
     if (!root || root->index == to_find) {
       return root;
-    } else {
-      for (auto child : root->children) {
-        return search(child, to_find);
+    }
+
+    for (Node* child : root->children) {
+      Node* found = search(child, to_find);
+      if (found) {
+        return found;
       }
     }
+
+    return NULL;
+  }
+
+  /**
+   * @brief      { function_description }
+   *
+   * @param      root     The root
+   * @param[in]  to_find  To find
+   *
+   * @return     { description_of_the_return_value }
+   */
+  Node* find_parent() {
+    if (current.parent && branch < current.parent->children.size()) {
+      return current.parent->children[branch];
+    } else {
+      return &current;
+    }
+  }
+
+  /**
+   * @brief      { function_description }
+   *
+   * @param[in]  s1    The s 1
+   * @param[in]  s2    The s 2
+   *
+   * @return     { description_of_the_return_value }
+   */
+  std::pair<std::string, std::string> patch(std::string s1, std::string s2) {
+    auto d1 = dmp.diff_main(s1, s2);
+    auto d2 = d1;
+
+    for (auto& e : d2) {
+      if (e.operation != EQUAL) {
+        e.operation = static_cast<Operation>(-1 * e.operation);
+      }
+    }
+
+    std::string p1 = dmp.patch_toText(dmp.patch_make(s1, d1));
+    std::string p2 = dmp.patch_toText(dmp.patch_make(s2, d2));
+
+    return std::make_pair(p1, p2);
   }
 };
 
@@ -234,7 +308,7 @@ typedef struct UndoTree UndoTree;
 
 UndoTree* newUndoTree(const char* path);
 void deleteUndoTree(UndoTree* t);
-int insert(UndoTree* t, const char* buf);
+void insert(UndoTree* t, const char* buf);
 
 #ifdef __cplusplus
 }
