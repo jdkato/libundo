@@ -11,6 +11,7 @@ TEST_CASE("Basic UndoTree functionality", "[file.undo]") {
   t->insert("C");
   // NOTE: B or C could be D's parent -- so, we need some notion of an "active
   // branch."
+  t->switch_branch();
   t->insert("D");
   REQUIRE(4 == 4);
 

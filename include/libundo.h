@@ -94,14 +94,13 @@ class UndoTree {
       root->patches = patch("", buf);
       root->parent = NULL;
     } else {
-      Node* parent = search(root, index);
+      Node* parent = find_parent();  // search(root, index);
       parent->children.push_back(to_add);
       to_add->parent = parent;
       to_add->patches = patch(cur_buf, buf);
     }
     index = to_add->index;
     cur_buf = buf;
-    current = *to_add;
   }
 
   /**
@@ -163,7 +162,8 @@ class UndoTree {
    * @brief      { function_description }
    */
   void switch_branch(void) {
-    if (branch + 1 < current.children.size()) {
+    Node* current = search(root, index);
+    if (branch + 1 < current->parent->children.size()) {
       branch = branch + 1;
     } else {
       branch = 0;
@@ -172,7 +172,6 @@ class UndoTree {
 
  private:
   Node* root;
-  Node current;
 
   int total;
   int index;
@@ -268,10 +267,11 @@ class UndoTree {
    * @return     { description_of_the_return_value }
    */
   Node* find_parent() {
-    if (current.parent && branch < current.parent->children.size()) {
-      return current.parent->children[branch];
+    Node* maybe = search(root, index);
+    if (maybe->parent && branch < maybe->parent->children.size()) {
+      return maybe->parent->children[branch];
     } else {
-      return &current;
+      return maybe;
     }
   }
 
