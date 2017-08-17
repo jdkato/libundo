@@ -2,13 +2,13 @@
 
 extern "C" {
 /**
-* @brief      { function_description }
-*
-* @param[in]  buf   The buffer
-*
-* @return     { description_of_the_return_value }
-*/
-UndoTree* newUndoTree() { return reinterpret_cast<UndoTree*>(new UndoTree()); }
+ * @brief      { function_description }
+ *
+ * @param[in]  buf   The buffer
+ *
+ * @return     { description_of_the_return_value }
+ */
+UndoTree* new_tree() { return reinterpret_cast<UndoTree*>(new UndoTree()); }
 
 /**
  * @brief      { function_description }
@@ -17,7 +17,7 @@ UndoTree* newUndoTree() { return reinterpret_cast<UndoTree*>(new UndoTree()); }
  *
  * @return     { description_of_the_return_value }
  */
-UndoTree* loadUndoTree(const char* path) {
+UndoTree* load_tree(const char* path) {
   UndoTree* t = new UndoTree();
 
   std::ifstream history(path, std::ios::in | std::ios::binary);
@@ -35,7 +35,7 @@ UndoTree* loadUndoTree(const char* path) {
  *
  * @param      t     { parameter_description }
  */
-void saveUndoTree(UndoTree* t, const char* path) {
+void save_tree(UndoTree* t, const char* path) {
   std::ofstream history(path, std::ios::out | std::ios::binary);
   if (history.is_open()) {
     cereal::BinaryOutputArchive archive(history);
