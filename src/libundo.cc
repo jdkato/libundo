@@ -8,8 +8,17 @@ extern "C" {
  *
  * @return     { description_of_the_return_value }
  */
-UndoTree* newUndoTree(const char* path) {
-  return reinterpret_cast<UndoTree*>(new UndoTree(path));
+UndoTree* loadUndoTree(const char* path) {
+  UndoTree* t = new UndoTree();
+
+  std::ifstream history(path, std::ios::in | std::ios::binary);
+  if (history.is_open()) {
+    cereal::BinaryInputArchive archive(history);
+    archive(*t);
+    history.close();
+  }
+
+  return reinterpret_cast<UndoTree*>(t);
 }
 
 /**
@@ -17,7 +26,14 @@ UndoTree* newUndoTree(const char* path) {
  *
  * @param      t     { parameter_description }
  */
-void deleteUndoTree(UndoTree* t) { delete t; }
+void saveUndoTree(UndoTree* t, const char* path) {
+  std::ofstream history(path, std::ios::out | std::ios::binary);
+  if (history.is_open()) {
+    cereal::BinaryOutputArchive archive(history);
+    archive(*t);
+    history.close();
+  }
+}
 
 /**
  * @brief      { function_description }

@@ -3,7 +3,7 @@
 
 SCENARIO("Buffer contents can be changed", "[core]") {
   GIVEN("A buffer with contents 'A'") {
-    UndoTree* t = new UndoTree("foo.undo");
+    UndoTree* t = new UndoTree();
     t->insert("A");
 
     REQUIRE(t->size() == 1);

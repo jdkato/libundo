@@ -1,7 +1,16 @@
 #ifndef LIBUNDO_H
 #define LIBUNDO_H
 
-#include "diff_match_patch.h"
+#include <diff_match_patch.h>
+
+#include <cereal/access.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/chrono.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/tuple.hpp>
+#include <cereal/types/utility.hpp>
+#include <cereal/types/vector.hpp>
 
 #include <chrono>
 #include <fstream>
@@ -23,22 +32,20 @@ struct Node {
 
   std::pair<std::string, std::string> patches;
   std::chrono::time_point<std::chrono::system_clock> timestamp;
+
+  template <class Archive>
+  void serialize(Archive& ar) {
+    ar(index, parent, patches, timestamp);
+  }
 };
 
 class UndoTree {
  public:
   /**
    * @brief      { function_description }
-   *
-   * @param[in]  hash  The hash
-   * @param[in]  dir   The dir
    */
-  UndoTree(const std::string& path) : root(NULL), total(0), branch(0), idx(0) {}
-
-  /**
-   * @brief      Destroys the object.
-   */
-  ~UndoTree(void) { write(root.get()); }
+  UndoTree() : root(NULL), total(0), branch(0), idx(0) {}
+  ~UndoTree() {}
 
   /**
    * @brief      { function_description }
@@ -153,12 +160,18 @@ class UndoTree {
 
   diff_match_patch<std::string> dmp;
 
+  friend class cereal::access;
   /**
    * @brief      { function_description }
    *
-   * @return     { description_of_the_return_value }
+   * @param      ar       The archive
+   *
+   * @tparam     Archive  { description }
    */
-  int write(Node* root) { return 0; }
+  template <class Archive>
+  void serialize(Archive& ar) {
+    ar(root, total, idx, branch, cur_buf, undo_file);
+  }
 
   std::vector<Node> collect(Node* root) {
     std::vector<Node> collected;
@@ -245,8 +258,8 @@ extern "C" {
 
 typedef struct UndoTree UndoTree;
 
-UndoTree* newUndoTree(const char* path);
-void deleteUndoTree(UndoTree* t);
+UndoTree* loadUndoTree(const char* path);
+void saveUndoTree(UndoTree* t, const char* path);
 void insert(UndoTree* t, const char* buf);
 
 #ifdef __cplusplus

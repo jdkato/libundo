@@ -36,6 +36,7 @@ set(BASE_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(BASE_TEST_DIR ${PROJECT_SOURCE_DIR}/test)
 
 set(BASE_HEADER_FILES
+    ${BASE_INCLUDE_DIR}/cereal
     ${BASE_INCLUDE_DIR}/diff_match_patch.h
     ${BASE_INCLUDE_DIR}/libundo.h
 )
