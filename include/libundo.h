@@ -3,32 +3,26 @@
 
 #include "diff_match_patch.h"
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
-#include <stack>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
 /**
- * { item_description }
- */
-#define NODE_END ')'
-
-/**
- * { item_description }
- */
-#define NODE_START '('
-
-/**
  * @brief      { struct_description }
  */
 struct Node {
   int index;
-  Node* parent;
-  std::vector<Node*> children;
+
+  std::shared_ptr<Node> parent;
+  std::vector<std::shared_ptr<Node>> children;
+
   std::pair<std::string, std::string> patches;
+  std::chrono::time_point<std::chrono::system_clock> timestamp;
 };
 
 class UndoTree {
@@ -39,45 +33,12 @@ class UndoTree {
    * @param[in]  hash  The hash
    * @param[in]  dir   The dir
    */
-  UndoTree(const std::string& path) : root(NULL), total(0), branch(0), idx(0) {
-    std::ifstream history(path);
-    if (history.is_open()) {
-      std::stack<Node*> stage;
-      std::string patch;
-      Node* parent = NULL;
-      char ch;
-      while (history >> std::noskipws >> ch) {
-        if (ch == NODE_START) {
-          patch = "";
-          Node* temp = new Node;
-          if (parent == NULL) {
-            root = temp;
-          } else {
-            parent->children.push_back(temp);
-          }
-          stage.push(temp);
-          parent = temp;
-        } else if (ch == NODE_END) {
-          stage.pop();
-          if (!stage.empty()) {
-            parent = stage.top();
-          }
-        } else {
-          patch += ch;
-        }
-      }
-    }
-    history.close();
-    undo_file = path;
-  }
+  UndoTree(const std::string& path) : root(NULL), total(0), branch(0), idx(0) {}
 
   /**
    * @brief      Destroys the object.
    */
-  ~UndoTree(void) {
-    write(root);
-    clear(root);
-  }
+  ~UndoTree(void) { write(root.get()); }
 
   /**
    * @brief      { function_description }
@@ -87,7 +48,7 @@ class UndoTree {
    * @return     { description_of_the_return_value }
    */
   void insert(const std::string& buf) {
-    Node* to_add = new Node;
+    std::shared_ptr<Node> to_add = std::make_shared<Node>();
     to_add->index = ++total;
 
     if (!root) {
@@ -95,7 +56,7 @@ class UndoTree {
       root->patches = patch("", buf);
       root->parent = NULL;
     } else {
-      Node* parent = find_parent();
+      std::shared_ptr<Node> parent = find_parent();
       parent->children.push_back(to_add);
       to_add->parent = parent;
       to_add->patches = patch(cur_buf, buf);
@@ -158,20 +119,20 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  Node* current() { return search(root, idx); }
+  std::shared_ptr<Node> current() { return search(root, idx); }
 
   /**
    * @brief      { function_description }
    *
    * @return     { description_of_the_return_value }
    */
-  std::vector<Node> nodes() { return collect(root); }
+  std::vector<Node> nodes() { return collect(root.get()); }
 
   /**
    * @brief      { function_description }
    */
   void switch_branch(void) {
-    Node* pos = current();
+    std::shared_ptr<Node> pos = current();
     if (branch + 1 < pos->parent->children.size()) {
       branch = branch + 1;
     } else {
@@ -180,7 +141,7 @@ class UndoTree {
   }
 
  private:
-  Node* root;
+  std::shared_ptr<Node> root;
 
   int total;
   int idx;
@@ -196,52 +157,18 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  int write(Node* root) {
-    std::ofstream outfile;
-    outfile.open(undo_file);
-    if (root != NULL) {
-      outfile << "(" << root->index;
-      for (auto child : root->children) {
-        write(child);
-      }
-      outfile << ")";
-    }
-    outfile.close();
-    return 0;
-  }
+  int write(Node* root) { return 0; }
 
   std::vector<Node> collect(Node* root) {
     std::vector<Node> collected;
     if (root != NULL) {
       collected.push_back(*root);
       for (auto child : root->children) {
-        std::vector<Node> found = collect(child);
+        std::vector<Node> found = collect(child.get());
         collected.insert(collected.end(), found.begin(), found.end());
       }
     }
     return collected;
-  }
-
-  /**
-   * @brief      { function_description }
-   *
-   * @param      root  The root
-   *
-   * @return     { description_of_the_return_value }
-   */
-  int clear(Node*& root) {
-    if (!root) {
-      return 0;
-    };
-
-    for (auto child : root->children) {
-      clear(child);
-    }
-
-    delete root;
-    root = NULL;
-
-    return 1;
   }
 
   /**
@@ -252,13 +179,13 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  Node* search(Node* root, int to_find) {
+  std::shared_ptr<Node> search(std::shared_ptr<Node> root, int to_find) {
     if (!root || root->index == to_find) {
       return root;
     }
 
-    for (Node* child : root->children) {
-      Node* found = search(child, to_find);
+    for (std::shared_ptr<Node> child : root->children) {
+      std::shared_ptr<Node> found = search(child, to_find);
       if (found) {
         return found;
       }
@@ -275,8 +202,8 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  Node* find_parent() {
-    Node* maybe = current();
+  std::shared_ptr<Node> find_parent() {
+    std::shared_ptr<Node> maybe = current();
     if (maybe->parent && branch < maybe->parent->children.size()) {
       return maybe->parent->children[branch];
     } else {

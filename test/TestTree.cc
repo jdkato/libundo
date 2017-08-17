@@ -7,7 +7,7 @@ SCENARIO("Buffer contents can be changed", "[core]") {
     t->insert("A");
 
     REQUIRE(t->size() == 1);
-    REQUIRE(t->current()->parent == NULL);
+    REQUIRE(!t->current()->parent);
 
     WHEN("I undo the addition") {
       std::string buf = t->undo();
