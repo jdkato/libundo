@@ -50,6 +50,7 @@ class UndoTree {
   void insert(const std::string& buf) {
     std::shared_ptr<Node> to_add = std::make_shared<Node>();
     to_add->index = ++total;
+    to_add->timestamp = std::chrono::system_clock::now();
 
     if (!root) {
       root = to_add;
