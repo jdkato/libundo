@@ -25,7 +25,7 @@
  * @brief      { struct_description }
  */
 struct Node {
-  int index;
+  int id;
 
   std::shared_ptr<Node> parent;
   std::vector<std::shared_ptr<Node>> children;
@@ -35,7 +35,7 @@ struct Node {
 
   template <class Archive>
   void serialize(Archive& ar) {
-    ar(index, parent, patches, timestamp);
+    ar(id, parent, patches, timestamp);
   }
 };
 
@@ -56,7 +56,7 @@ class UndoTree {
    */
   void insert(const std::string& buf) {
     std::shared_ptr<Node> to_add = std::make_shared<Node>();
-    to_add->index = ++total;
+    to_add->id = ++total;
     to_add->timestamp = std::chrono::system_clock::now();
 
     if (!root) {
@@ -70,7 +70,7 @@ class UndoTree {
       to_add->patches = patch(cur_buf, buf);
     }
 
-    idx = to_add->index;
+    idx = to_add->id;
     cur_buf = buf;
   }
 
@@ -134,7 +134,7 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  std::string current_buf() { return cur_buf; }
+  std::string buffer() { return cur_buf; }
 
   /**
    * @brief      { function_description }
@@ -201,7 +201,7 @@ class UndoTree {
    * @return     { description_of_the_return_value }
    */
   std::shared_ptr<Node> search(std::shared_ptr<Node> root, int to_find) {
-    if (!root || root->index == to_find) {
+    if (!root || root->id == to_find) {
       return root;
     }
 
