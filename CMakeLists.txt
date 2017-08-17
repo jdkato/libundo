@@ -120,13 +120,13 @@ if(GENERATE_DOXYGEN_DOCUMENTATION)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
         set(LIB_DOC_DIR ${PROJECT_BINARY_DIR}/doc)
-        configure_file(${PROJECT_SOURCE_DIR}/doc/Doxyfile.in ${LIB_DOC_DIR}/Doxyfile @ONLY)
+        configure_file(${PROJECT_SOURCE_DIR}/doc/Doxyfile ${LIB_DOC_DIR}/Doxyfile @ONLY)
         add_custom_target(doxygen-doc
             COMMAND ${DOXYGEN_EXECUTABLE}
             WORKING_DIRECTORY ${LIB_DOC_DIR}
             COMMENT "Building doxygen documentation"
-            SOURCES ${PROJECT_SOURCE_DIR}/doc/Doxyfile.in
+            SOURCES ${PROJECT_SOURCE_DIR}/doc/Doxyfile
         )
-        source_group("" FILES ${PROJECT_SOURCE_DIR}/doc/Doxyfile.in)
+        source_group("" FILES ${PROJECT_SOURCE_DIR}/doc/Doxyfile)
     endif()
 endif()
