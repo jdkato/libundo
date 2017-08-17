@@ -44,7 +44,7 @@ class UndoTree {
   /**
    * @brief      { function_description }
    */
-  UndoTree() : root(NULL), total(0), branch(0), idx(0) {}
+  UndoTree() : root(NULL), total(0), branch_idx(0), idx(0) {}
   ~UndoTree() {}
 
   /**
@@ -81,7 +81,7 @@ class UndoTree {
    */
   std::string undo() {
     if (idx - 1 >= 0) {
-      std::string patch = current()->patches.second;
+      std::string patch = current_node()->patches.second;
       std::pair<std::string, std::vector<bool>> out =
           dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
       idx = idx - 1;
@@ -98,7 +98,7 @@ class UndoTree {
    */
   std::string redo() {
     if (idx + 1 <= total) {
-      std::string patch = current()->patches.first;
+      std::string patch = current_node()->patches.first;
       std::pair<std::string, std::vector<bool>> out =
           dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
       idx = idx + 1;
@@ -120,14 +120,21 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  int current_branch() { return branch; }
+  int branch() { return branch_idx; }
 
   /**
    * @brief      { function_description }
    *
    * @return     { description_of_the_return_value }
    */
-  std::shared_ptr<Node> current() { return search(root, idx); }
+  std::shared_ptr<Node> current_node() { return search(root, idx); }
+
+  /**
+   * @brief      { function_description }
+   *
+   * @return     { description_of_the_return_value }
+   */
+  std::string current_buf() { return cur_buf; }
 
   /**
    * @brief      { function_description }
@@ -140,11 +147,11 @@ class UndoTree {
    * @brief      { function_description }
    */
   void switch_branch(void) {
-    std::shared_ptr<Node> pos = current();
-    if (branch + 1 < pos->parent->children.size()) {
-      branch = branch + 1;
+    std::shared_ptr<Node> pos = current_node();
+    if (branch_idx + 1 < pos->parent->children.size()) {
+      branch_idx = branch_idx + 1;
     } else {
-      branch = 0;
+      branch_idx = 0;
     }
   }
 
@@ -153,7 +160,7 @@ class UndoTree {
 
   int total;
   int idx;
-  int branch;
+  int branch_idx;
 
   std::string cur_buf;
   std::string undo_file;
@@ -170,7 +177,7 @@ class UndoTree {
    */
   template <class Archive>
   void serialize(Archive& ar) {
-    ar(root, total, idx, branch, cur_buf, undo_file);
+    ar(root, total, idx, branch_idx, cur_buf, undo_file);
   }
 
   std::vector<Node> collect(Node* root) {
@@ -217,9 +224,9 @@ class UndoTree {
    * @return     { description_of_the_return_value }
    */
   std::shared_ptr<Node> find_parent() {
-    std::shared_ptr<Node> maybe = current();
-    if (maybe->parent && branch < maybe->parent->children.size()) {
-      return maybe->parent->children[branch];
+    std::shared_ptr<Node> maybe = current_node();
+    if (maybe->parent && branch_idx < maybe->parent->children.size()) {
+      return maybe->parent->children[branch_idx];
     } else {
       return maybe;
     }
@@ -258,6 +265,7 @@ extern "C" {
 
 typedef struct UndoTree UndoTree;
 
+UndoTree* newUndoTree();
 UndoTree* loadUndoTree(const char* path);
 void saveUndoTree(UndoTree* t, const char* path);
 void insert(UndoTree* t, const char* buf);

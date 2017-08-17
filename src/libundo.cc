@@ -2,6 +2,15 @@
 
 extern "C" {
 /**
+* @brief      { function_description }
+*
+* @param[in]  buf   The buffer
+*
+* @return     { description_of_the_return_value }
+*/
+UndoTree* newUndoTree() { return reinterpret_cast<UndoTree*>(new UndoTree()); }
+
+/**
  * @brief      { function_description }
  *
  * @param[in]  buf   The buffer

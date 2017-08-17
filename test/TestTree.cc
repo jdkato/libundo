@@ -1,13 +1,13 @@
 #include <catch.hpp>
 #include "libundo.h"
 
-SCENARIO("Buffer contents can be changed", "[core]") {
+SCENARIO("Buffer contents can be changed", "[tree]") {
   GIVEN("A buffer with contents 'A'") {
     UndoTree* t = new UndoTree();
     t->insert("A");
 
     REQUIRE(t->size() == 1);
-    REQUIRE(!t->current()->parent);
+    REQUIRE(!t->current_node()->parent);
 
     WHEN("I undo the addition") {
       std::string buf = t->undo();
