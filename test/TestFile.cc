@@ -13,7 +13,7 @@ SCENARIO("Buffer contents can be serialized", "[file]") {
       save_tree(t, "test.libundo-session");
 
       THEN("I should be able to load it back") {
-        UndoTree* t = load_tree("test.libundo-session");
+        UndoTree* t = load_tree("test.libundo-session", "A");
         REQUIRE(t->size() == 1);
       }
     }

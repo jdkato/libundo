@@ -1,5 +1,7 @@
 #include "libundo.h"
 
+#include <functional>
+
 extern "C" {
 /**
  * @brief      { function_description }
@@ -17,7 +19,7 @@ UndoTree* new_tree() { return reinterpret_cast<UndoTree*>(new UndoTree()); }
  *
  * @return     { description_of_the_return_value }
  */
-UndoTree* load_tree(const char* path) {
+UndoTree* load_tree(const char* path, const char* buf) {
   UndoTree* t = new UndoTree();
 
   std::ifstream history(path, std::ios::in | std::ios::binary);
@@ -25,6 +27,16 @@ UndoTree* load_tree(const char* path) {
     cereal::BinaryInputArchive archive(history);
     archive(*t);
     history.close();
+  }
+
+  if (t->size() > 0) {
+    std::size_t old_hash = std::hash<std::string>{}(t->buffer());
+    std::size_t new_hash = std::hash<std::string>{}(buf);
+
+    if (old_hash != new_hash) {
+      free_tree(t);
+      return new_tree();
+    }
   }
 
   return reinterpret_cast<UndoTree*>(t);
@@ -43,6 +55,13 @@ void save_tree(UndoTree* t, const char* path) {
     history.close();
   }
 }
+
+/**
+ * @brief      { function_description }
+ *
+ * @param      t     { parameter_description }
+ */
+void free_tree(UndoTree* t) { delete t; }
 
 /**
  * @brief      { function_description }

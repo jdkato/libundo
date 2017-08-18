@@ -266,8 +266,9 @@ extern "C" {
 typedef struct UndoTree UndoTree;
 
 UndoTree* new_tree();
-UndoTree* load_tree(const char* path);
+UndoTree* load_tree(const char* path, const char* buf);
 void save_tree(UndoTree* t, const char* path);
+void free_tree(UndoTree* t);
 void insert(UndoTree* t, const char* buf);
 
 #ifdef __cplusplus
