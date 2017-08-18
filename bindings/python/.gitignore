@@ -2,7 +2,6 @@ build/
 dist/
 *.egg-info/
 libundo/
-libundo.c
-libundo.*.so
+libundo.cc
+libundo.so
 .eggs/
-*.bycython.*
