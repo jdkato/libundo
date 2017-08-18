@@ -15,6 +15,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -56,6 +57,7 @@ class UndoTree {
    */
   void insert(const std::string& buf) {
     std::shared_ptr<Node> to_add = std::make_shared<Node>();
+
     to_add->id = ++total;
     to_add->timestamp = std::chrono::system_clock::now();
 
@@ -72,6 +74,7 @@ class UndoTree {
 
     idx = to_add->id;
     cur_buf = buf;
+    index[total] = to_add;
   }
 
   /**
@@ -85,10 +88,9 @@ class UndoTree {
       std::pair<std::string, std::vector<bool>> out =
           dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
       idx = idx - 1;
-      return out.first;
-    } else {
-      return cur_buf;
+      cur_buf = out.first;
     }
+    return cur_buf;
   }
 
   /**
@@ -102,10 +104,9 @@ class UndoTree {
       std::pair<std::string, std::vector<bool>> out =
           dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
       idx = idx + 1;
-      return out.first;
-    } else {
-      return cur_buf;
+      cur_buf = out.first;
     }
+    return cur_buf;
   }
 
   /**
@@ -127,7 +128,7 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  std::shared_ptr<Node> current_node() { return search(root, idx); }
+  std::shared_ptr<Node> current_node() { return search(idx); }
 
   /**
    * @brief      { function_description }
@@ -157,6 +158,7 @@ class UndoTree {
 
  private:
   std::shared_ptr<Node> root;
+  std::map<int, std::shared_ptr<Node>> index;
 
   int total;
   int idx;
@@ -200,18 +202,11 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  std::shared_ptr<Node> search(std::shared_ptr<Node> root, int to_find) {
-    if (!root || root->id == to_find) {
-      return root;
+  std::shared_ptr<Node> search(int to_find) {
+    auto it = index.find(to_find);
+    if (it != index.end()) {
+      return it->second;
     }
-
-    for (std::shared_ptr<Node> child : root->children) {
-      std::shared_ptr<Node> found = search(child, to_find);
-      if (found) {
-        return found;
-      }
-    }
-
     return NULL;
   }
 
@@ -267,9 +262,21 @@ typedef struct UndoTree UndoTree;
 
 UndoTree* new_tree();
 UndoTree* load_tree(const char* path, const char* buf);
+
 void save_tree(UndoTree* t, const char* path);
 void free_tree(UndoTree* t);
 void insert(UndoTree* t, const char* buf);
+void switch_branch(UndoTree* t);
+
+const char* undo(UndoTree* t);
+const char* redo(UndoTree* t);
+const char* buffer(UndoTree* t);
+
+int size(UndoTree* t);
+int branch(UndoTree* t);
+
+// std::shared_ptr<Node> current_node() { return search(idx); }
+// std::vector<Node> nodes() { return collect(root.get()); }
 
 #ifdef __cplusplus
 }

@@ -11,7 +11,7 @@ cdef class UndoTree:
     >>> q.pop()
     5
     """
-    cdef ctree.UndoTree* _c_tree
+    cpdef ctree.UndoTree* _c_tree
 
     def __cinit__(self, const char* path, const char* buf):
         # Start a new tree if
@@ -24,14 +24,13 @@ cdef class UndoTree:
         self._c_tree = ctree.load_tree(path, buf)
         if self._c_tree is NULL:
             raise MemoryError()
-        self.path = path
 
     def __dealloc__(self):
         if self._c_tree is not NULL:
             ctree.free_tree(self._c_tree)
 
-    cpdef save(self):
-        ctree.save_tree(self._c_tree, self.path)
+    cpdef save(self, const char* path):
+        ctree.save_tree(self._c_tree, path)
 
     cpdef insert(self, const char* buf):
         """
@@ -39,14 +38,29 @@ cdef class UndoTree:
         """
         ctree.insert(self._c_tree, buf)
 
-    '''
-    cpdef int pop(self) except? -1:
-        if cqueue.queue_is_empty(self._c_queue):
-            raise IndexError("Queue is empty")
-        return <int>cqueue.queue_pop_head(self._c_queue)
-    '''
+    cpdef undo(self):
+        """
+        """
+        return ctree.undo(self._c_tree)
 
-    '''
+    cpdef redo(self):
+        """
+        """
+        return ctree.redo(self._c_tree)
+
+    cpdef switch_branch(self):
+        """
+        """
+        return ctree.switch_branch(self._c_tree)
+
+    cpdef size(self):
+        return ctree.size(self._c_tree)
+
+    cpdef branch(self):
+        return ctree.branch(self._c_tree)
+
+    cpdef buf(self):
+        return ctree.buffer(self._c_tree)
+
     def __bool__(self):
-        return not cqueue.queue_is_empty(self._c_queue)
-    '''
+        return self.size() > 0

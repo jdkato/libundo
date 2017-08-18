@@ -72,4 +72,54 @@ void free_tree(UndoTree* t) { delete t; }
  * @return     { description_of_the_return_value }
  */
 void insert(UndoTree* t, const char* buf) { t->insert(buf); }
+
+/**
+ * @brief      { function_description }
+ *
+ * @return     { description_of_the_return_value }
+ */
+const char* undo(UndoTree* t) { return t->undo().c_str(); }
+
+/**
+ * @brief      { function_description }
+ *
+ * @param      t     { parameter_description }
+ *
+ * @return     { description_of_the_return_value }
+ */
+const char* redo(UndoTree* t) { return t->redo().c_str(); }
+
+/**
+ * @brief      { function_description }
+ *
+ * @param      t     { parameter_description }
+ */
+void switch_branch(UndoTree* t) { t->switch_branch(); }
+
+/**
+ * @brief      { function_description }
+ *
+ * @param      t     { parameter_description }
+ *
+ * @return     { description_of_the_return_value }
+ */
+const char* buffer(UndoTree* t) { return t->buffer().c_str(); }
+
+/**
+ * @brief      { function_description }
+ *
+ * @param      t     { parameter_description }
+ *
+ * @return     { description_of_the_return_value }
+ */
+int size(UndoTree* t) { return t->size(); }
+
+/**
+ * @brief      { function_description }
+ *
+ * @param      t     { parameter_description }
+ *
+ * @return     { description_of_the_return_value }
+ */
+int branch(UndoTree* t) { return t->branch(); }
 }
