@@ -10,3 +10,4 @@ cdef extern from "libundo.h":
         string buffer()
         int size()
         int branch()
+        void switch_branch()

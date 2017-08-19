@@ -1,5 +1,15 @@
 from libundo import PyUndoTree
 
 t = PyUndoTree("foo.py", "")
-t.insert("Hello from libundo (C++)!")
-print(t.get_buffer())
+
+t.insert('My name is Joe.')
+print("A: {0}".format(t.buffer()))
+
+t.insert('My name is actually Bob.')
+print("B: {0}".format(t.buffer()))
+
+t.undo()
+print("After undo: {0}".format(t.buffer()))
+
+t.redo()
+print("After redo: {0}".format(t.buffer()))
