@@ -3,7 +3,7 @@
 
 SCENARIO("Traversal", "[tree]") {
   GIVEN("An empty UndoTree") {
-    UndoTree* t = new UndoTree();
+    std::unique_ptr<UndoTree> t = std::make_unique<UndoTree>();
 
     WHEN("I move up and down (linearly)") {
       /* Initial state -- one addition ('1'):
