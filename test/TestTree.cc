@@ -5,7 +5,7 @@ SCENARIO("Traversal", "[tree]") {
   GIVEN("An empty UndoTree") {
     UndoTree* t = new UndoTree();
 
-    WHEN("I move up and down (linearl)") {
+    WHEN("I move up and down (linearly)") {
       /* Initial state -- one addition ('1'):
        *
        *             1 (@)
@@ -82,7 +82,7 @@ SCENARIO("Traversal", "[tree]") {
       REQUIRE(t->redo() == "My name is actually Bob.");
       REQUIRE(t->current_node()->id == 2);
 
-      /* Fouth state --  back to '3':
+      /* Fourth state --  back to '3':
        *
        *             1
        *            / \
