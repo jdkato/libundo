@@ -1,51 +1,101 @@
 #include <catch.hpp>
 #include "libundo.h"
 
-SCENARIO("Buffer contents can be changed", "[tree]") {
-  GIVEN("A buffer with contents 'A'") {
+SCENARIO("Traversal", "[tree]") {
+  GIVEN("An empty UndoTree") {
     UndoTree* t = new UndoTree();
-    t->insert("A");
 
-    REQUIRE(t->size() == 1);
-    REQUIRE(!t->current_node()->parent);
+    WHEN("I move up and down (linearl)") {
+      /* Initial state -- one addition ('1'):
+       *
+       *             1 (@)
+       */
+      t->insert("My name is Joe.");
+      REQUIRE(t->buffer() == "My name is Joe.");
+      REQUIRE(t->current_node()->id == 1);
 
-    WHEN("I undo the addition") {
-      std::string buf = t->undo();
+      /* Second state --  another addition ('2'):
+       *
+       *             1
+       *              \
+       *               2 (@)
+       */
+      t->insert("My name is actually Bob.");
+      REQUIRE(t->buffer() == "My name is actually Bob.");
+      REQUIRE(t->current_node()->id == 2);
 
-      THEN("the buffer should be empty") { REQUIRE(buf == ""); }
+      /* Third state -- back to 'A':
+       *
+       *             1 (@)
+       *              \
+       *               2
+       */
+      REQUIRE(t->undo() == "My name is Joe.");
+      REQUIRE(t->current_node()->id == 1);
+
+      /* Fourth state -- back to 'B':
+       *
+       *             1
+       *              \
+       *               2 (@)
+       */
+      REQUIRE(t->redo() == "My name is actually Bob.");
+      REQUIRE(t->current_node()->id == 2);
     }
 
-    WHEN("I redo the addition") {
-      std::string buf = t->redo();
+    WHEN("I move up and down (branching)") {
+      /* Initial state -- one addition ('1'):
+       *
+       *             1 (@)
+       */
+      t->insert("My name is Joe.");
+      REQUIRE(t->buffer() == "My name is Joe.");
+      REQUIRE(t->current_node()->id == 1);
 
-      THEN("the buffer should be 'A' again") { REQUIRE(buf == "A"); }
+      /* Second state --  two more additions ('2' & '3'):
+       *
+       *             1
+       *            / \
+       *       (@) 3   2
+       */
+      t->insert("My name is actually Bob.");
+      REQUIRE(t->buffer() == "My name is actually Bob.");
+      REQUIRE(t->current_node()->id == 2);
+      REQUIRE(t->current_node()->parent->id == 1);
+
+      REQUIRE(t->undo() == "My name is Joe.");
+
+      t->insert("My name is Bob.");
+      REQUIRE(t->buffer() == "My name is Bob.");
+      REQUIRE(t->current_node()->id == 3);
+      REQUIRE(t->current_node()->parent->id == 1);
+
+      /* Third state --  back to '2':
+       *
+       *             1
+       *            / \
+       *           3   2 (@)
+       */
+      REQUIRE(t->undo() == "My name is Joe.");
+      REQUIRE(t->current_node()->id == 1);
+
+      REQUIRE(t->redo() == "My name is actually Bob.");
+      REQUIRE(t->current_node()->id == 2);
+
+      /* Fouth state --  back to '3':
+       *
+       *             1
+       *            / \
+       *       (@) 3   2
+       */
+      REQUIRE(t->undo() == "My name is Joe.");
+      REQUIRE(t->current_node()->id == 1);
+
+      t->switch_branch();
+
+      REQUIRE(t->redo() == "My name is Bob.");
+      REQUIRE(t->current_node()->id == 3);
+      REQUIRE(t->current_node()->parent->id == 1);
     }
   }
 }
-
-/*
-TEST_CASE("Basic UndoTree functionality", "[file.undo]") {
-  UndoTree* t = new UndoTree("foo.undo");
-
-  t->insert("A");
-  t->insert("B");
-  t->undo();
-  t->insert("C");
-  // NOTE: B or C could be D's parent -- so, we need some notion of an "active
-  // branch."
-  t->switch_branch();
-  t->insert("D");
-  REQUIRE(4 == 4);
-
-  std::vector<Node> nodes = t->nodes();
-  std::cout << "Contents: " << std::endl;
-  for (auto child : nodes) {
-    Node* parent = child.parent;
-    if (parent == NULL) {
-      std::cout << "Node " << child.index << " is root." << std::endl;
-    } else {
-      std::cout << "Node " << child.index << " has parent " << parent->index
-                << "." << std::endl;
-    }
-  }
-}*/

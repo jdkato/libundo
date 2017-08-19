@@ -6,9 +6,9 @@
 #include <cereal/access.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/chrono.hpp>
+#include <cereal/types/map.hpp>
 #include <cereal/types/memory.hpp>
 #include <cereal/types/string.hpp>
-#include <cereal/types/tuple.hpp>
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
 
@@ -29,14 +29,15 @@ struct Node {
   int id;
 
   std::shared_ptr<Node> parent;
-  std::vector<std::shared_ptr<Node>> children;
 
-  std::pair<std::string, std::string> patches;
+  std::vector<std::shared_ptr<Node>> children;
+  std::map<int, std::string> patches;
+
   std::chrono::time_point<std::chrono::system_clock> timestamp;
 
   template <class Archive>
   void serialize(Archive& ar) {
-    ar(id, parent, patches, timestamp);
+    ar(id, parent, children, patches, timestamp);
   }
 };
 
@@ -45,7 +46,7 @@ class UndoTree {
   /**
    * @brief      { function_description }
    */
-  UndoTree() : root(NULL), total(0), branch_idx(0), idx(0) {}
+  UndoTree() : root(NULL), total(0), b_idx(0), n_idx(0) {}
   ~UndoTree() {}
 
   /**
@@ -60,19 +61,23 @@ class UndoTree {
 
     to_add->id = ++total;
     to_add->timestamp = std::chrono::system_clock::now();
-
     if (!root) {
       root = to_add;
-      root->patches = patch("", buf);
       root->parent = NULL;
     } else {
       std::shared_ptr<Node> parent = find_parent();
+      std::pair<std::string, std::string> patches = patch(cur_buf, buf);
+
       parent->children.push_back(to_add);
+      parent->patches[total] = patches.first;
+
       to_add->parent = parent;
-      to_add->patches = patch(cur_buf, buf);
+      to_add->patches[parent->id] = patches.second;
+
+      // parent -> children; child -> parent
     }
 
-    idx = to_add->id;
+    n_idx = to_add->id;
     cur_buf = buf;
     index[total] = to_add;
   }
@@ -83,12 +88,9 @@ class UndoTree {
    * @return     { description_of_the_return_value }
    */
   std::string undo() {
-    if (idx - 1 >= 0) {
-      std::string patch = current_node()->patches.second;
-      std::pair<std::string, std::vector<bool>> out =
-          dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
-      idx = idx - 1;
-      cur_buf = out.first;
+    std::shared_ptr<Node> parent = current_node()->parent;
+    if (parent) {
+      cur_buf = apply_patch(parent->id);
     }
     return cur_buf;
   }
@@ -99,12 +101,9 @@ class UndoTree {
    * @return     { description_of_the_return_value }
    */
   std::string redo() {
-    if (idx + 1 <= total) {
-      std::string patch = current_node()->patches.first;
-      std::pair<std::string, std::vector<bool>> out =
-          dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
-      idx = idx + 1;
-      cur_buf = out.first;
+    std::shared_ptr<Node> n = current_node();
+    if (n->children.size() > 0) {
+      cur_buf = apply_patch(n->children[b_idx]->id);
     }
     return cur_buf;
   }
@@ -121,14 +120,14 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  int branch() { return branch_idx; }
+  int branch() { return b_idx; }
 
   /**
    * @brief      { function_description }
    *
    * @return     { description_of_the_return_value }
    */
-  std::shared_ptr<Node> current_node() { return search(idx); }
+  std::shared_ptr<Node> current_node() { return search(n_idx); }
 
   /**
    * @brief      { function_description }
@@ -148,11 +147,10 @@ class UndoTree {
    * @brief      { function_description }
    */
   void switch_branch(void) {
-    std::shared_ptr<Node> pos = current_node();
-    if (branch_idx + 1 < pos->parent->children.size()) {
-      branch_idx = branch_idx + 1;
+    if (b_idx + 1 < current_node()->children.size()) {
+      b_idx = b_idx + 1;
     } else {
-      branch_idx = 0;
+      b_idx = 0;
     }
   }
 
@@ -161,8 +159,8 @@ class UndoTree {
   std::map<int, std::shared_ptr<Node>> index;
 
   int total;
-  int idx;
-  int branch_idx;
+  int n_idx;
+  int b_idx;
 
   std::string cur_buf;
   std::string undo_file;
@@ -179,7 +177,7 @@ class UndoTree {
    */
   template <class Archive>
   void serialize(Archive& ar) {
-    ar(root, total, idx, branch_idx, cur_buf, undo_file);
+    ar(root, total, n_idx, b_idx, cur_buf, undo_file);
   }
 
   std::vector<Node> collect(Node* root) {
@@ -220,11 +218,26 @@ class UndoTree {
    */
   std::shared_ptr<Node> find_parent() {
     std::shared_ptr<Node> maybe = current_node();
-    if (maybe->parent && branch_idx < maybe->parent->children.size()) {
-      return maybe->parent->children[branch_idx];
+    if (maybe->parent && b_idx < maybe->parent->children.size()) {
+      return maybe->parent->children[b_idx];
     } else {
       return maybe;
     }
+  }
+
+  /**
+   * @brief      { function_description }
+   *
+   * @param[in]  id    The identifier
+   *
+   * @return     { description_of_the_return_value }
+   */
+  const std::string apply_patch(int id) {
+    std::string patch = current_node()->patches[id];
+    std::pair<std::string, std::vector<bool>> out =
+        dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
+    n_idx = id;
+    return out.first;
   }
 
   /**
@@ -237,18 +250,16 @@ class UndoTree {
    */
   std::pair<std::string, std::string> patch(std::string s1, std::string s2) {
     auto d1 = dmp.diff_main(s1, s2);
-    auto d2 = d1;
+    std::string p1 = dmp.patch_toText(dmp.patch_make(s1, d1));
 
-    for (auto& e : d2) {
+    for (auto& e : d1) {
       if (e.operation == DELETE) {
         e.operation = INSERT;
       } else if (e.operation == INSERT) {
         e.operation = DELETE;
       }
     }
-
-    std::string p1 = dmp.patch_toText(dmp.patch_make(s1, d1));
-    std::string p2 = dmp.patch_toText(dmp.patch_make(s2, d2));
+    std::string p2 = dmp.patch_toText(dmp.patch_make(s2, d1));
 
     return std::make_pair(p1, p2);
   }
@@ -275,7 +286,7 @@ const char* buffer(UndoTree* t);
 int size(UndoTree* t);
 int branch(UndoTree* t);
 
-// std::shared_ptr<Node> current_node() { return search(idx); }
+// std::shared_ptr<Node> current_node() { return search(n_idx); }
 // std::vector<Node> nodes() { return collect(root.get()); }
 
 #ifdef __cplusplus
