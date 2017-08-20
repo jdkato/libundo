@@ -1,20 +1,29 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 
-from ctree cimport UndoTree
+from ctree cimport (
+    UndoTree,
+    load,
+    save
+)
 
 
 cdef class PyUndoTree:
-    cdef UndoTree* _c_tree  # a pointer to the C++ instance which we're wrapping
-                          #
-    def __cinit__(self):
-        self._c_tree = new UndoTree()
+    cdef UndoTree* _c_tree
+    cdef string path
+
+    def __cinit__(self, string path, string buf):
+        self._c_tree = load(path, buf)
         if self._c_tree is NULL:
             raise MemoryError()
+        self.path = path
 
     def __dealloc__(self):
         if self._c_tree is not NULL:
             del self._c_tree
+
+    cpdef save(self):
+        save(self._c_tree, self.path)
 
     cpdef undo(self):
         self._c_tree.undo()

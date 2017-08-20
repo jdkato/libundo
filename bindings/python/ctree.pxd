@@ -13,4 +13,7 @@ cdef extern from "libundo.h" namespace "libundo":
         int branch()
         void switch_branch()
 
+    cdef UndoTree* load(const string& path, const string& buf)
+    cdef void save(UndoTree* t, const string& path)
+
 
