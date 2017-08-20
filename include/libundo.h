@@ -306,11 +306,11 @@ inline UndoTree* load(const std::string& path, const std::string& buf) {
 
     if (old_hash != new_hash) {
       delete t;
-      return reinterpret_cast<UndoTree*>(new UndoTree());
+      return new UndoTree();
     }
   }
 
-  return reinterpret_cast<UndoTree*>(t);
+  return t;
 }
 }
 
