@@ -38,8 +38,8 @@ script:
   - cmake . && make
   - ./bin/run_tests
   # Python
-  - cd ../${TRAVIS_BUILD_DIR}/bindings/python
+  - cd ../bindings/python
   - make lib && make
-  - python bindings/python/test.py
+  - python test.py
 after_failure:
   - cat /home/travis/build/libundo/libundo/test/CMakeFiles/CMakeOutput.log
