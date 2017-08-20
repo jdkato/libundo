@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.3)
 
 project(libundo)
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED on)
 
 if($ENV{TRAVIS})
     if($ENV{TRAVIS} STREQUAL "true")
@@ -51,7 +52,7 @@ if(BUILD_TESTS)
 
     if(NOT TARGET Catch)
         include(ExternalProject)
-        if(IS_TRAVIS_BUILD)     # on travis, use git for fetching instead of wget
+        if(IS_TRAVIS_BUILD)
             set(FETCH_EXTERNAL_CATCH
                 GIT_REPOSITORY https://github.com/philsquared/Catch.git
                 GIT_TAG 0c1c9fa9229c7358ce16c9910004a39290b20f5f)
