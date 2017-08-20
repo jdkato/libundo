@@ -1,6 +1,7 @@
 #include <catch.hpp>
 #include "libundo.h"
 
+/*
 SCENARIO("Buffer contents can be serialized", "[file]") {
   GIVEN("A buffer with contents 'A'") {
     UndoTree* t = new_tree();
@@ -18,4 +19,4 @@ SCENARIO("Buffer contents can be serialized", "[file]") {
       }
     }
   }
-}
+}*/

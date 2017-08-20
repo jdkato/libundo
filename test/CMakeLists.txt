@@ -31,34 +31,15 @@ set(BASE_VERSION_MINOR 1)
 set(BASE_VERSION_PATCH 0)
 set(BASE_VERSION "${BASE_VERSION_MAJOR}.${BASE_VERSION_MINOR}.${BASE_VERSION_PATCH}")
 
-set(BASE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
-set(BASE_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
-set(BASE_TEST_DIR ${PROJECT_SOURCE_DIR}/test)
-
-set(BASE_HEADER_FILES
-    ${BASE_INCLUDE_DIR}/cereal
-    ${BASE_INCLUDE_DIR}/diff_match_patch.h
-    ${BASE_INCLUDE_DIR}/libundo.h
-)
-
-set(BASE_SOURCE_FILES
-    ${BASE_SOURCE_DIR}/libundo.cc
-)
-
 set(BASE_TEST_SOURCES
-    ${BASE_TEST_DIR}/TestBase.cc
-    ${BASE_TEST_DIR}/TestTree.cc
-    ${BASE_TEST_DIR}/TestFile.cc
+    TestBase.cc
+    TestTree.cc
+    TestFile.cc
 )
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-include_directories(include)
-
-add_library(libundo SHARED ${BASE_SOURCE_FILES} ${BASE_HEADER_FILES})
-add_library(libundo_static STATIC ${BASE_SOURCE_FILES} ${BASE_HEADER_FILES})
+include_directories(../include)
 
 ###############################################################################
 # Testing
@@ -84,20 +65,20 @@ if(BUILD_TESTS)
                 URL_HASH MD5=a8dfb7be899a6e7fb30bd55d53426122)
         endif()
         ExternalProject_Add(Catch-External
-            PREFIX ${CMAKE_BINARY_DIR}/test/Catch
+            PREFIX ${CMAKE_BINARY_DIR}/Catch
             ${FETCH_EXTERNAL_CATCH}
             CONFIGURE_COMMAND ""
             BUILD_COMMAND ""
-            INSTALL_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/test/Catch/src/Catch-External/single_include/catch.hpp
-                                                     ${CMAKE_BINARY_DIR}/test/Catch/include/catch.hpp
+            INSTALL_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/Catch/src/Catch-External/single_include/catch.hpp
+                                                     ${CMAKE_BINARY_DIR}/Catch/include/catch.hpp
         )
         add_library(Catch INTERFACE)
         add_dependencies(Catch Catch-External)
-        target_include_directories(Catch INTERFACE ${CMAKE_BINARY_DIR}/test/Catch/include)
+        target_include_directories(Catch INTERFACE ${CMAKE_BINARY_DIR}/Catch/include)
     endif()
 
     add_executable(run_tests ${BASE_TEST_SOURCES})
-    target_link_libraries(run_tests libundo Catch)
+    target_link_libraries(run_tests Catch)
     add_test(NAME TestBase COMMAND run_tests)
 
     if(GENERATE_COVERAGE_INFO AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))

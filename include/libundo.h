@@ -14,6 +14,7 @@
 
 #include <chrono>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -21,6 +22,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+
+namespace libundo {
 
 /**
  * @brief      { struct_description }
@@ -49,6 +52,15 @@ class UndoTree {
   UndoTree() : root(NULL), total(0), b_idx(0), n_idx(0) {}
   ~UndoTree() {}
 
+  void save(const std::string& path) {
+    std::ofstream history(path, std::ios::out | std::ios::binary);
+    if (history.is_open()) {
+      cereal::BinaryOutputArchive archive(history);
+      archive(*this);
+      history.close();
+    }
+  }
+
   /**
    * @brief      { function_description }
    *
@@ -73,8 +85,6 @@ class UndoTree {
 
       to_add->parent = parent;
       to_add->patches[parent->id] = patches.second;
-
-      // parent -> children; child -> parent
     }
 
     n_idx = to_add->id;
@@ -265,32 +275,43 @@ class UndoTree {
   }
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct UndoTree UndoTree;
-
-UndoTree* new_tree();
-UndoTree* load_tree(const char* path, const char* buf);
-
-void save_tree(UndoTree* t, const char* path);
-void free_tree(UndoTree* t);
-void insert(UndoTree* t, const char* buf);
-void switch_branch(UndoTree* t);
-
-const char* undo(UndoTree* t);
-const char* redo(UndoTree* t);
-const char* buffer(UndoTree* t);
-
-int size(UndoTree* t);
-int branch(UndoTree* t);
-
-// std::shared_ptr<Node> current_node() { return search(n_idx); }
-// std::vector<Node> nodes() { return collect(root.get()); }
-
-#ifdef __cplusplus
+/**
+ * Parse the given SGF file into a Collection of GameTrees.
+ *
+ * @param  input_file A path to an SGF file.
+ * @return            A vector of GameTrees.
+ */
+inline void save(UndoTree* t, const std::string& path) {
+  std::ofstream history(path, std::ios::out | std::ios::binary);
+  if (history.is_open()) {
+    cereal::BinaryOutputArchive archive(history);
+    archive(*t);
+    history.close();
+  }
 }
-#endif
+
+inline UndoTree* load(const std::string& path, const std::string& buf) {
+  UndoTree* t = new UndoTree();
+
+  std::ifstream history(path, std::ios::in | std::ios::binary);
+  if (history.is_open()) {
+    cereal::BinaryInputArchive archive(history);
+    archive(*t);
+    history.close();
+  }
+
+  if (t->size() > 0) {
+    std::size_t old_hash = std::hash<std::string>{}(t->buffer());
+    std::size_t new_hash = std::hash<std::string>{}(buf);
+
+    if (old_hash != new_hash) {
+      delete t;
+      return reinterpret_cast<UndoTree*>(new UndoTree());
+    }
+  }
+
+  return reinterpret_cast<UndoTree*>(t);
+}
+}
 
 #endif  // LIBUNDO_H

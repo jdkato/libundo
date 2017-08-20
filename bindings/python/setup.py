@@ -19,7 +19,6 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
-src = os.path.join('..', '..', 'src')
 include = os.path.join('..', '..', 'include')
 setup(name='libundo',
       description='Branching, persistent undo/redo.',
@@ -30,7 +29,7 @@ setup(name='libundo',
       author_email='joseph@jdkato.io',
       license='Apache-2.0',
       ext_modules=[
-          Extension('libundo', [module_src, os.path.join(src, 'libundo.cc')],
+          Extension('libundo', [module_src],
                     include_dirs=[include],
                     depends=[os.path.join(include, 'libundo.h')],
                     language='c++',

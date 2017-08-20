@@ -3,7 +3,8 @@
 
 SCENARIO("Traversal", "[tree]") {
   GIVEN("An empty UndoTree") {
-    std::unique_ptr<UndoTree> t = std::make_unique<UndoTree>();
+    std::unique_ptr<libundo::UndoTree> t =
+        std::make_unique<libundo::UndoTree>();
 
     WHEN("I move up and down (linearly)") {
       /* Initial state -- one addition ('1'):

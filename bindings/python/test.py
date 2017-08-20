@@ -1,6 +1,6 @@
 from libundo import PyUndoTree
 
-t = PyUndoTree("foo.py", "")
+t = PyUndoTree()
 
 t.insert('My name is Joe.')
 print("A: {0}".format(t.buffer()))
