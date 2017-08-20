@@ -52,21 +52,11 @@ class UndoTree {
   UndoTree() : root(NULL), total(0), b_idx(0), n_idx(0) {}
   ~UndoTree() {}
 
-  void save(const std::string& path) {
-    std::ofstream history(path, std::ios::out | std::ios::binary);
-    if (history.is_open()) {
-      cereal::BinaryOutputArchive archive(history);
-      archive(*this);
-      history.close();
-    }
-  }
-
   /**
-   * @brief      { function_description }
+   * @brief      Inserts the string `buf` into the tree.
    *
-   * @param[in]  buf   The buffer
+   * @param[in]  buf   The buffer contents.
    *
-   * @return     { description_of_the_return_value }
    */
   void insert(const std::string& buf) {
     std::shared_ptr<Node> to_add = std::make_shared<Node>();
@@ -93,9 +83,10 @@ class UndoTree {
   }
 
   /**
-   * @brief      { function_description }
+   * @brief      Undo the last insertion into the tree by moving back to its
+   *             parent.
    *
-   * @return     { description_of_the_return_value }
+   * @return     The contents of the previous Node -- i.e., the current buffer.
    */
   std::string undo() {
     std::shared_ptr<Node> parent = current_node()->parent;
@@ -276,10 +267,10 @@ class UndoTree {
 };
 
 /**
- * Parse the given SGF file into a Collection of GameTrees.
+ * @brief      { function_description }
  *
- * @param  input_file A path to an SGF file.
- * @return            A vector of GameTrees.
+ * @param      t     { parameter_description }
+ * @param[in]  path  The path
  */
 inline void save(UndoTree* t, const std::string& path) {
   std::ofstream history(path, std::ios::out | std::ios::binary);
@@ -290,6 +281,14 @@ inline void save(UndoTree* t, const std::string& path) {
   }
 }
 
+/**
+ * @brief      { function_description }
+ *
+ * @param[in]  path  The path
+ * @param[in]  buf   The buffer
+ *
+ * @return     { description_of_the_return_value }
+ */
 inline UndoTree* load(const std::string& path, const std::string& buf) {
   UndoTree* t = new UndoTree();
 
