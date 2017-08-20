@@ -6,8 +6,7 @@ from setuptools import setup, Extension
 cmdclass = {}
 long_description = ''
 
-USE_CYTHON = os.getenv('USE_CYTHON', False)
-if USE_CYTHON:
+if os.getenv('USE_CYTHON', False):
     from Cython.Build import build_ext
     module_src = 'libundo.pyx'
     cmdclass['build_ext'] = build_ext
@@ -33,6 +32,6 @@ setup(name='libundo',
                     include_dirs=[include],
                     depends=[os.path.join(include, 'libundo.h')],
                     language='c++',
-                    extra_compile_args=['-O3', '-std=c++11'])
+                    extra_compile_args=['-O3', '-std=c++14'])
       ],
       cmdclass=cmdclass)
