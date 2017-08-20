@@ -5,6 +5,7 @@ compiler:
   - clang
   - gcc
 before_script:
+  - cd test
   - cmake .
   - make
 script:
