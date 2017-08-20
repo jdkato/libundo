@@ -26,10 +26,10 @@ cdef class PyUndoTree:
         save(self._c_tree, self.path)
 
     cpdef undo(self):
-        self._c_tree.undo()
+        return self._c_tree.undo()
 
     cpdef redo(self):
-        self._c_tree.redo()
+        return self._c_tree.redo()
 
     cpdef size(self):
         return self._c_tree.size()
