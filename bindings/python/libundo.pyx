@@ -53,6 +53,10 @@ cdef class PyUndoTree:
         cdef shared_ptr[Node] ptr = self._c_tree.current_node()
         return self.__make_node(dereference(ptr))
 
+    cpdef nodes(self):
+        cdef vector[Node] nodes = self._c_tree.nodes()
+        return [self.__make_node(n) for n in nodes]
+
     cdef __make_node(self, Node n):
         return {
             'id': n.id,
