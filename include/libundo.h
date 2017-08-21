@@ -30,7 +30,8 @@ namespace libundo {
 /**
  * @brief      { struct_description }
  */
-struct Node {
+class Node {
+ public:
   int id;
 
   std::shared_ptr<Node> parent;
@@ -40,6 +41,15 @@ struct Node {
 
   std::string timestamp;
 
+ private:
+  friend class cereal::access;
+  /**
+   * @brief      { function_description }
+   *
+   * @param      ar       The archive
+   *
+   * @tparam     Archive  { description }
+   */
   template <class Archive>
   void serialize(Archive& ar) {
     ar(id, parent, children, patches, timestamp);

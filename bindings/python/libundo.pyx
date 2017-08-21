@@ -1,10 +1,13 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
+from libcpp.memory cimport shared_ptr
+from cython.operator cimport dereference
 
 from ctree cimport (
     UndoTree,
     load,
-    save
+    save,
+    Node
 )
 
 
@@ -22,6 +25,9 @@ cdef class PyUndoTree:
         if self._c_tree is not NULL:
             del self._c_tree
 
+    def __len__(self):
+        return self._c_tree.size()
+
     cpdef save(self):
         save(self._c_tree, self.path)
 
@@ -30,9 +36,6 @@ cdef class PyUndoTree:
 
     cpdef redo(self):
         return self._c_tree.redo()
-
-    cpdef size(self):
-        return self._c_tree.size()
 
     cpdef branch(self):
         return self._c_tree.branch()
@@ -45,3 +48,15 @@ cdef class PyUndoTree:
 
     cpdef switch_branch(self):
         return self._c_tree.switch_branch()
+
+    cpdef head(self):
+        cdef shared_ptr[Node] ptr = self._c_tree.current_node()
+        return self.__make_node(dereference(ptr))
+
+    cdef __make_node(self, Node n):
+        return {
+            'id': n.id,
+            'timestamp': n.timestamp,
+            'parent': dereference(n.parent).id if n.parent.get() else None,
+            'children': [dereference(c).id for c in n.children]
+        }
