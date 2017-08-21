@@ -69,11 +69,11 @@ template <class char_t>
 struct diff_match_patch_traits {};
 
 /**-
-  * The data structure representing a diff is a Linked list of Diff objects:
-  * {Diff(Operation.DELETE, "Hello"), Diff(Operation.INSERT, "Goodbye"),
-  *  Diff(Operation.EQUAL, " world.")}
-  * which means: delete "Hello", add "Goodbye" and keep " world."
-  */
+ * The data structure representing a diff is a Linked list of Diff objects:
+ * {Diff(Operation.DELETE, "Hello"), Diff(Operation.INSERT, "Goodbye"),
+ *  Diff(Operation.EQUAL, " world.")}
+ * which means: delete "Hello", add "Goodbye" and keep " world."
+ */
 enum Operation { DELETE, INSERT, EQUAL };
 
 /**
@@ -81,18 +81,18 @@ enum Operation { DELETE, INSERT, EQUAL };
  * Also contains the behaviour settings.
  */
 template <class stringT,
-          class traits = diff_match_patch_traits<typename stringT::value_type> >
+          class traits = diff_match_patch_traits<typename stringT::value_type>>
 class diff_match_patch {
  public:
   /**
-  * String and character types
-  */
+   * String and character types
+   */
   typedef stringT string_t;
   typedef typename string_t::value_type char_t;
 
   /**
-  * Class representing one diff operation.
-  */
+   * Class representing one diff operation.
+   */
   class Diff {
    public:
     Operation operation;
@@ -150,8 +150,8 @@ class diff_match_patch {
   typedef std::list<Diff> Diffs;
 
   /**
-  * Class representing one patch operation.
-  */
+   * Class representing one patch operation.
+   */
   class Patch {
    public:
     Diffs diffs;
@@ -1222,13 +1222,13 @@ class diff_match_patch {
           post_ins = true;
         }
         /*
-        * Five types to be split:
-        * <ins>A</ins><del>B</del>XY<ins>C</ins><del>D</del>
-        * <ins>A</ins>X<ins>C</ins><del>D</del>
-        * <ins>A</ins><del>B</del>X<ins>C</ins>
-        * <ins>A</del>X<ins>C</ins><del>D</del>
-        * <ins>A</ins><del>B</del>X<del>C</del>
-        */
+         * Five types to be split:
+         * <ins>A</ins><del>B</del>XY<ins>C</ins><del>D</del>
+         * <ins>A</ins>X<ins>C</ins><del>D</del>
+         * <ins>A</ins><del>B</del>X<ins>C</ins>
+         * <ins>A</del>X<ins>C</ins><del>D</del>
+         * <ins>A</ins><del>B</del>X<del>C</del>
+         */
         if (!lastequality.empty() &&
             ((pre_ins && pre_del && post_ins && post_del) ||
              (((int)lastequality.length() < Diff_EditCost / 2) &&
@@ -1361,10 +1361,10 @@ class diff_match_patch {
     }
 
     /*
-    * Second pass: look for single edits surrounded on both sides by equalities
-    * which can be shifted sideways to eliminate an equality.
-    * e.g: A<ins>BA</ins>C -> <ins>AB</ins>AC
-    */
+     * Second pass: look for single edits surrounded on both sides by equalities
+     * which can be shifted sideways to eliminate an equality.
+     * e.g: A<ins>BA</ins>C -> <ins>AB</ins>AC
+     */
     bool changes = false;
     // Create a new iterator at the start.
     // (As opposed to walking the current one back.)
@@ -1735,13 +1735,13 @@ class diff_match_patch {
     // Highest score beyond which we give up.
     double score_threshold = Match_Threshold;
     // Is there a nearby exact match? (speedup)
-    size_t best_loc = text.find(pattern, loc);
-    if (best_loc != string_t::npos) {
+    int best_loc = text.find(pattern, loc);
+    if (best_loc != (int)string_t::npos) {
       score_threshold = std::min(match_bitapScore(0, best_loc, loc, pattern),
                                  score_threshold);
       // What about in the other direction? (speedup)
       best_loc = text.rfind(pattern, loc + pattern.length());
-      if (best_loc != string_t::npos) {
+      if (best_loc != (int)string_t::npos) {
         score_threshold = std::min(match_bitapScore(0, best_loc, loc, pattern),
                                    score_threshold);
       }
@@ -1753,7 +1753,7 @@ class diff_match_patch {
 
     int bin_min, bin_mid;
     int bin_max = pattern.length() + text.length();
-    int *rd;
+    int *rd = NULL;
     int *last_rd = NULL;
     for (int d = 0; d < (int)pattern.length(); d++) {
       // Scan for the best match; each iteration allows for one more error.
@@ -2061,14 +2061,14 @@ class diff_match_patch {
    *      boolean values.
    */
  public:
-  std::pair<string_t, std::vector<bool> > patch_apply(
+  std::pair<string_t, std::vector<bool>> patch_apply(
       const Patches &patches, const string_t &text) const {
-    std::pair<string_t, std::vector<bool> > res;
+    std::pair<string_t, std::vector<bool>> res;
     patch_apply(patches, text, res);
     return res;
   }
   void patch_apply(const Patches &patches, const string_t &sourceText,
-                   std::pair<string_t, std::vector<bool> > &res) const {
+                   std::pair<string_t, std::vector<bool>> &res) const {
     if (patches.empty()) {
       res.first = sourceText;
       res.second.clear();
@@ -2568,10 +2568,10 @@ class diff_match_patch {
       c = traits::to_utf32(c, end, u);
       n += u >= 0x10000
                ? 12
-               : u >= 0x800 ? 9 : u >= 0x80
-                                      ? 6
-                                      : safe[static_cast<unsigned char>(u)] ? 1
-                                                                            : 3;
+               : u >= 0x800
+                     ? 9
+                     : u >= 0x80 ? 6
+                                 : safe[static_cast<unsigned char>(u)] ? 1 : 3;
     }
     if (n == int(s2.length()))
       s1.append(s2);
