@@ -12,12 +12,14 @@
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
 
-#include <chrono>
+#include <ctime>
 #include <fstream>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -36,7 +38,7 @@ struct Node {
   std::vector<std::shared_ptr<Node>> children;
   std::map<int, std::string> patches;
 
-  std::chrono::time_point<std::chrono::system_clock> timestamp;
+  std::string timestamp;
 
   template <class Archive>
   void serialize(Archive& ar) {
@@ -62,7 +64,7 @@ class UndoTree {
     std::shared_ptr<Node> to_add = std::make_shared<Node>();
 
     to_add->id = ++total;
-    to_add->timestamp = std::chrono::system_clock::now();
+    to_add->timestamp = get_time();
     if (!root) {
       root = to_add;
       root->parent = NULL;
@@ -263,6 +265,14 @@ class UndoTree {
     std::string p2 = dmp.patch_toText(dmp.patch_make(s2, d1));
 
     return std::make_pair(p1, p2);
+  }
+
+  std::string get_time() {
+    std::time_t t = std::time(nullptr);
+    std::tm tm = *std::localtime(&t);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    return oss.str();
   }
 };
 
