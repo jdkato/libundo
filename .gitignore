@@ -34,4 +34,7 @@
 test/Catch
 bin/
 lib/
+
 *.libundo-session
+*.sublime-workspace
+*.sublime-project

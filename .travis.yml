@@ -16,7 +16,6 @@ addons:
         - g++-5
         - gcc-5
         - doxygen
-        - graphviz
 before_install:
   - pip install --user cython
 install:
@@ -33,13 +32,5 @@ before_script:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
   - if [ "$CXX" = "clang++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="clang++-3.7" CC="clang-3.7"; fi
 script:
-  # C++
-  - cd ${TRAVIS_BUILD_DIR}/test
-  - cmake . && make
-  - ./bin/run_tests
-  # Python
-  - cd ../bindings/python
-  - make lib && make
-  - python test.py
-after_failure:
-  - cat /home/travis/build/libundo/libundo/test/CMakeFiles/CMakeOutput.log
+  - make cpp
+  - make py
