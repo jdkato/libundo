@@ -49,7 +49,7 @@ class UndoTree {
   /**
    * @brief      { function_description }
    */
-  UndoTree() : root(NULL), total(0), b_idx(0), n_idx(0) {}
+  UndoTree() : root(NULL), total(0), n_idx(0), b_idx(0) {}
   ~UndoTree() {}
 
   /**
@@ -114,14 +114,14 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  int size() { return total; }
+  size_t size() { return total; }
 
   /**
    * @brief      { function_description }
    *
    * @return     { description_of_the_return_value }
    */
-  int branch() { return b_idx; }
+  size_t branch() { return b_idx; }
 
   /**
    * @brief      { function_description }
@@ -159,9 +159,9 @@ class UndoTree {
   std::shared_ptr<Node> root;
   std::map<int, std::shared_ptr<Node>> index;
 
-  int total;
-  int n_idx;
-  int b_idx;
+  size_t total;
+  size_t n_idx;
+  size_t b_idx;
 
   std::string cur_buf;
   std::string undo_file;
@@ -311,6 +311,6 @@ inline UndoTree* load(const std::string& path, const std::string& buf) {
 
   return t;
 }
-}
+}  // namespace libundo
 
 #endif  // LIBUNDO_H
