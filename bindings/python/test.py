@@ -1,21 +1,20 @@
 import os
-import shutil
 import unittest
 
 from libundo import PyUndoTree
 
 
-def new_tree():
-    if os.path.exists('test.libundo-session'):
-        shutil.remove('test.libundo-session')
-    return PyUndoTree('test.libundo-session', '')
+def new_tree(name):
+    if os.path.exists(name):
+        os.remove(name)
+    return PyUndoTree(name, '')
 
 
 class PyUndoTreeTestCase(unittest.TestCase):
     """Tests for navigation and serialization of PyUndoTree.
     """
     def test_navigate_linear(self):
-        t = new_tree()
+        t = new_tree('test.libundo-session')
         # Initial state -- one addition ('1'):
         #
         #             1 (@)
@@ -45,7 +44,7 @@ class PyUndoTreeTestCase(unittest.TestCase):
         self.assertEqual(t.redo(), 'My name is actually Bob.')
 
     def test_navigate_branch(self):
-        t = new_tree()
+        t = new_tree('test.libundo-session')
         # Initial state -- one addition ('1'):
         #            1 (@)
         t.insert('My name is Joe.')
@@ -82,6 +81,26 @@ class PyUndoTreeTestCase(unittest.TestCase):
         t.switch_branch()
 
         self.assertEqual(t.redo(), 'My name is Bob.')
+
+    def test_serialize_valid(self):
+        t = new_tree('persist.libundo-session')
+
+        t.insert('Hello from libundo (C++)!')
+        self.assertEqual(t.size(), 1)
+        t.save()
+
+        t2 = PyUndoTree('persist.libundo-session', 'Hello from libundo (C++)!')
+        self.assertEqual(t2.size(), 1)
+
+    def test_serialize_invalid(self):
+        t = new_tree('persist.libundo-session')
+
+        t.insert('Hello from libundo (C++)!')
+        self.assertEqual(t.size(), 1)
+        t.save()
+
+        t2 = PyUndoTree('persist.libundo-session', 'Hello from libundo!')
+        self.assertEqual(t2.size(), 0)
 
 
 if __name__ == '__main__':
