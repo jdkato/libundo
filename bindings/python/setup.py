@@ -1,10 +1,13 @@
-import codecs
 import os
 
 from setuptools import setup, Extension
 
 cmdclass = {}
-long_description = ''
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except ImportError:
+    long_description = None
 
 if os.getenv('USE_CYTHON', False):
     from Cython.Build import build_ext
@@ -12,11 +15,6 @@ if os.getenv('USE_CYTHON', False):
     cmdclass['build_ext'] = build_ext
 else:
     module_src = 'libundo.cc'
-
-# Load README into long description.
-here = os.path.abspath(os.path.dirname(__file__))
-with codecs.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
 
 include = os.path.join('..', '..', 'include')
 setup(name='libundo',
