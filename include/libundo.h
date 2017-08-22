@@ -25,8 +25,6 @@
 #include <utility>
 #include <vector>
 
-namespace libundo {
-
 /**
  * @brief      { struct_description }
  */
@@ -62,7 +60,6 @@ class UndoTree {
    * @brief      { function_description }
    */
   UndoTree() : root(NULL), total(0), n_idx(0), b_idx(0) {}
-  ~UndoTree() {}
 
   /**
    * @brief      Inserts the string `buf` into the tree.
@@ -286,51 +283,38 @@ class UndoTree {
   }
 };
 
-/**
- * @brief      { function_description }
- *
- * @param      t     { parameter_description }
- * @param[in]  path  The path
- */
-inline void save(UndoTree* t, const std::string& path) {
-  std::ofstream history(path, std::ios::out | std::ios::binary);
-  if (history.is_open()) {
-    cereal::BinaryOutputArchive archive(history);
-    archive(*t);
-    history.close();
-  }
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+  int id;
+  int parent;
+  const char* timestamp;
+} CNode;
+
+typedef struct UndoTree UndoTree;
+
+UndoTree* new_tree();
+UndoTree* load_tree(const char* path, const char* buf);
+
+void save_tree(UndoTree* t, const char* path);
+void free_tree(UndoTree* t);
+void insert(UndoTree* t, const char* buf);
+void switch_branch(UndoTree* t);
+
+const char* undo(UndoTree* t);
+const char* redo(UndoTree* t);
+const char* buffer(UndoTree* t);
+
+int size(UndoTree* t);
+int branch(UndoTree* t);
+
+CNode head(UndoTree* t);
+CNode* nodes(UndoTree* t);
+
+#ifdef __cplusplus
 }
-
-/**
- * @brief      { function_description }
- *
- * @param[in]  path  The path
- * @param[in]  buf   The buffer
- *
- * @return     { description_of_the_return_value }
- */
-inline UndoTree* load(const std::string& path, const std::string& buf) {
-  UndoTree* t = new UndoTree();
-
-  std::ifstream history(path, std::ios::in | std::ios::binary);
-  if (history.is_open()) {
-    cereal::BinaryInputArchive archive(history);
-    archive(*t);
-    history.close();
-  }
-
-  if (t->size() > 0) {
-    std::size_t old_hash = std::hash<std::string>{}(t->buffer());
-    std::size_t new_hash = std::hash<std::string>{}(buf);
-
-    if (old_hash != new_hash) {
-      delete t;
-      return new UndoTree();
-    }
-  }
-
-  return t;
-}
-}  // namespace libundo
+#endif
 
 #endif  // LIBUNDO_H
