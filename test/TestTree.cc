@@ -92,7 +92,7 @@ SCENARIO("Traversal", "[tree]") {
       REQUIRE(t->undo() == "My name is Joe.");
       REQUIRE(t->current_node()->id == 1);
 
-      t->switch_branch();
+      t->switch_branch(1);
 
       REQUIRE(t->redo() == "My name is Bob.");
       REQUIRE(t->current_node()->id == 3);

@@ -165,11 +165,11 @@ class UndoTree {
   /**
    * @brief      { function_description }
    */
-  void switch_branch(void) {
-    if (b_idx + 1 < current_node()->children.size()) {
-      b_idx = b_idx + 1;
+  void switch_branch(int direction) {
+    if (direction != 0) {
+      move_up();
     } else {
-      b_idx = 0;
+      move_down();
     }
   }
 
@@ -213,6 +213,30 @@ class UndoTree {
       return it->second;
     }
     return NULL;
+  }
+
+  /**
+   * @brief      { function_description }
+   */
+  void move_up() {
+    if (b_idx + 1 < current_node()->children.size()) {
+      b_idx = b_idx + 1;
+    } else {
+      b_idx = 0;
+    }
+  }
+
+  /**
+   * @brief      { function_description }
+   */
+  void move_down() {
+    if (b_idx != 0) {
+      b_idx = b_idx - 1;
+    } else if (current_node()->children.size()) {
+      b_idx = current_node()->children.size() - 1;
+    } else {
+      b_idx = 0;
+    }
   }
 
   /**
