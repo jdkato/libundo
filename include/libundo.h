@@ -154,7 +154,13 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  std::vector<Node> nodes() { return collect(root.get()); }
+  std::vector<Node> nodes() {
+    std::vector<Node> collected;
+    for (auto const& node : index) {
+      collected.push_back(*node.second.get());
+    }
+    return collected;
+  }
 
   /**
    * @brief      { function_description }
@@ -191,18 +197,6 @@ class UndoTree {
   template <class Archive>
   void serialize(Archive& ar) {
     ar(root, total, n_idx, b_idx, cur_buf, undo_file);
-  }
-
-  std::vector<Node> collect(Node* root) {
-    std::vector<Node> collected;
-    if (root != NULL) {
-      collected.push_back(*root);
-      for (auto child : root->children) {
-        std::vector<Node> found = collect(child.get());
-        collected.insert(collected.end(), found.begin(), found.end());
-      }
-    }
-    return collected;
   }
 
   /**
