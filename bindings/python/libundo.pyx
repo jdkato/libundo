@@ -46,8 +46,8 @@ cdef class PyUndoTree:
     cpdef buffer(self):
         return self._c_tree.buffer()
 
-    cpdef switch_branch(self):
-        return self._c_tree.switch_branch()
+    cpdef switch_branch(self, int direction):
+        return self._c_tree.switch_branch(direction)
 
     cpdef head(self):
         cdef shared_ptr[Node] ptr = self._c_tree.current_node()

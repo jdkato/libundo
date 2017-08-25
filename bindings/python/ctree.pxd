@@ -5,6 +5,11 @@ from libcpp.map cimport map
 
 cdef extern from "libundo.h" namespace "libundo":
 
+    cdef struct Delta:
+        string buffer
+        string patch
+        int position
+
     cdef cppclass Node:
         int id
         shared_ptr[Node] parent
@@ -15,14 +20,14 @@ cdef extern from "libundo.h" namespace "libundo":
     cdef cppclass UndoTree:
         UndoTree() except +
         void insert(const string& buf)
-        string undo()
-        string redo()
+        Delta undo()
+        Delta redo()
         string buffer()
         shared_ptr[Node] current_node()
         vector[Node] nodes()
         int size()
         int branch()
-        void switch_branch()
+        void switch_branch(int direction)
 
     cdef UndoTree* load(const string& path, const string& buf)
     cdef void save(UndoTree* t, const string& path)

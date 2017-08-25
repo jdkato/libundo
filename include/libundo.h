@@ -27,12 +27,19 @@
 
 namespace libundo {
 
+struct Delta {
+  std::string buffer;
+  std::string patch;
+  int position;
+};
+
 /**
  * @brief      { struct_description }
  */
 class Node {
  public:
   int id;
+  int position;
 
   std::shared_ptr<Node> parent;
 
@@ -70,11 +77,12 @@ class UndoTree {
    * @param[in]  buf   The buffer contents.
    *
    */
-  void insert(const std::string& buf) {
+  void insert(const std::string& buf, int pos = 0) {
     std::shared_ptr<Node> to_add = std::make_shared<Node>();
 
     to_add->id = ++total;
     to_add->timestamp = get_time();
+    to_add->position = pos;
     if (!root) {
       root = to_add;
       root->parent = NULL;
@@ -100,12 +108,18 @@ class UndoTree {
    *
    * @return     The contents of the previous Node -- i.e., the current buffer.
    */
-  std::string undo() {
+  Delta undo() {
     std::shared_ptr<Node> parent = current_node()->parent;
+    Delta dt;
     if (parent) {
-      cur_buf = apply_patch(parent->id);
+      dt.patch = apply_patch(parent->id);
+      dt.position = parent->position;
+    } else {
+      dt.patch = "";
+      dt.position = current_node()->position;
     }
-    return cur_buf;
+    dt.buffer = cur_buf;
+    return dt;
   }
 
   /**
@@ -113,12 +127,18 @@ class UndoTree {
    *
    * @return     { description_of_the_return_value }
    */
-  std::string redo() {
+  Delta redo() {
     std::shared_ptr<Node> n = current_node();
+    Delta dt;
     if (n->children.size() > 0) {
-      cur_buf = apply_patch(n->children[b_idx]->id);
+      dt.patch = apply_patch(n->children[b_idx]->id);
+      dt.position = n->children[b_idx]->position;
+    } else {
+      dt.patch = "";
+      dt.position = n->position;
     }
-    return cur_buf;
+    dt.buffer = cur_buf;
+    return dt;
   }
 
   /**
@@ -268,7 +288,8 @@ class UndoTree {
     std::pair<std::string, std::vector<bool>> out =
         dmp.patch_apply(dmp.patch_fromText(patch), cur_buf);
     n_idx = id;
-    return out.first;
+    cur_buf = out.first;
+    return patch;
   }
 
   /**

@@ -31,7 +31,7 @@ SCENARIO("Traversal", "[tree]") {
        *              \
        *               2
        */
-      REQUIRE(t->undo() == "My name is Joe.");
+      REQUIRE(t->undo().buffer == "My name is Joe.");
       REQUIRE(t->current_node()->id == 1);
 
       /* Fourth state -- back to 'B':
@@ -40,7 +40,7 @@ SCENARIO("Traversal", "[tree]") {
        *              \
        *               2 (@)
        */
-      REQUIRE(t->redo() == "My name is actually Bob.");
+      REQUIRE(t->redo().buffer == "My name is actually Bob.");
       REQUIRE(t->current_node()->id == 2);
     }
 
@@ -64,7 +64,7 @@ SCENARIO("Traversal", "[tree]") {
       REQUIRE(t->current_node()->id == 2);
       REQUIRE(t->current_node()->parent->id == 1);
 
-      REQUIRE(t->undo() == "My name is Joe.");
+      REQUIRE(t->undo().buffer == "My name is Joe.");
 
       t->insert("My name is Bob.");
       REQUIRE(t->buffer() == "My name is Bob.");
@@ -77,10 +77,10 @@ SCENARIO("Traversal", "[tree]") {
        *            / \
        *           3   2 (@)
        */
-      REQUIRE(t->undo() == "My name is Joe.");
+      REQUIRE(t->undo().buffer == "My name is Joe.");
       REQUIRE(t->current_node()->id == 1);
 
-      REQUIRE(t->redo() == "My name is actually Bob.");
+      REQUIRE(t->redo().buffer == "My name is actually Bob.");
       REQUIRE(t->current_node()->id == 2);
 
       /* Fourth state --  back to '3':
@@ -89,12 +89,12 @@ SCENARIO("Traversal", "[tree]") {
        *            / \
        *       (@) 3   2
        */
-      REQUIRE(t->undo() == "My name is Joe.");
+      REQUIRE(t->undo().buffer == "My name is Joe.");
       REQUIRE(t->current_node()->id == 1);
 
       t->switch_branch(1);
 
-      REQUIRE(t->redo() == "My name is Bob.");
+      REQUIRE(t->redo().buffer == "My name is Bob.");
       REQUIRE(t->current_node()->id == 3);
       REQUIRE(t->current_node()->parent->id == 1);
     }
