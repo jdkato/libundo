@@ -66,9 +66,13 @@ class Node {
 class UndoTree {
  public:
   /**
-   * @brief      { function_description }
+   * @brief      An N-ary tree representing a text buffer's history.
    */
-  UndoTree() : root(NULL), total(0), n_idx(0), b_idx(0) {}
+  UndoTree() : root(NULL), total(0), n_idx(0), b_idx(0) {
+    // We don't want to quit early.
+    dmp.Diff_Timeout = 0;
+  }
+
   ~UndoTree() {}
 
   /**
@@ -195,8 +199,8 @@ class UndoTree {
       // This can only happen if we're not to the end of the list yet.
       b_idx = b_idx + 1;
     } else if (direction == 0 && b_idx > 0) {
-       // We're moving to the left - e.g., [a, b_idx, c] => [b_idx, a, c].
-       // This can only happen if we're not at the start of the list.
+      // We're moving to the left - e.g., [a, b_idx, c] => [b_idx, a, c].
+      // This can only happen if we're not at the start of the list.
       b_idx = b_idx - 1;
     } else {
       // We're at the end of head's children (either extreme); wrap around
