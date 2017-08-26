@@ -186,10 +186,22 @@ class UndoTree {
    * @brief      { function_description }
    */
   void switch_branch(int direction) {
-    if (direction != 0) {
-      move_up();
+    size_t n = current_node()->children.size();
+    if (n <= 1) {
+      // We have no where to move - e.g., [b_idx].
+      return;
+    } else if (direction != 0 && b_idx + 1 < n) {
+      // We're moving to the right - e.g., [b_idx, b, c] => [a, b_idx, c].
+      // This can only happen if we're not to the end of the list yet.
+      b_idx = b_idx + 1;
+    } else if (direction == 0 && b_idx > 0) {
+       // We're moving to the left - e.g., [a, b_idx, c] => [b_idx, a, c].
+       // This can only happen if we're not at the start of the list.
+      b_idx = b_idx - 1;
     } else {
-      move_down();
+      // We're at the end of head's children (either extreme); wrap around
+      // to the other end.
+      b_idx = (b_idx == n - 1) ? 0 : n - 1;
     }
   }
 
@@ -233,30 +245,6 @@ class UndoTree {
       return it->second;
     }
     return NULL;
-  }
-
-  /**
-   * @brief      { function_description }
-   */
-  void move_up() {
-    if (b_idx + 1 < current_node()->children.size()) {
-      b_idx = b_idx + 1;
-    } else {
-      b_idx = 0;
-    }
-  }
-
-  /**
-   * @brief      { function_description }
-   */
-  void move_down() {
-    if (b_idx != 0) {
-      b_idx = b_idx - 1;
-    } else if (current_node()->children.size()) {
-      b_idx = current_node()->children.size() - 1;
-    } else {
-      b_idx = 0;
-    }
   }
 
   /**
