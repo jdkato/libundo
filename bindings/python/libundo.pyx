@@ -40,8 +40,8 @@ cdef class PyUndoTree:
     cpdef branch(self):
         return self._c_tree.branch()
 
-    cpdef insert(self, string buf):
-        return self._c_tree.insert(buf)
+    cpdef insert(self, const string& buf, int pos):
+        return self._c_tree.insert(buf, pos)
 
     cpdef buffer(self):
         return self._c_tree.buffer()

@@ -19,7 +19,7 @@ cdef extern from "libundo.h" namespace "libundo":
 
     cdef cppclass UndoTree:
         UndoTree() except +
-        void insert(const string& buf)
+        void insert(const string& buf, int pos)
         Delta undo()
         Delta redo()
         string buffer()
